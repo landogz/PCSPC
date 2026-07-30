@@ -1,4 +1,5 @@
 import { initPasswordToggles } from '../utils/password-toggle';
+import { applyUserAvatar, avatarInitial } from '../utils/avatar';
 
 const SIDEBAR_STATE_KEY = 'hr-sidebar';
 const DESKTOP_BREAKPOINT = 992;
@@ -224,18 +225,15 @@ export function fillSidebarUser(user) {
         return;
     }
 
-    const initial = (user.name || user.email || 'U').trim().charAt(0).toUpperCase();
+    const initial = avatarInitial(user.name, user.email);
     const firstName = (user.name || '').trim().split(/\s+/)[0] || 'there';
 
     const map = {
         'sidebar-user-name': user.name,
         'sidebar-user-email': user.email,
-        'sidebar-user-initial': initial,
         'sidebar-user-name-mobile': user.name,
         'sidebar-user-email-mobile': user.email,
-        'sidebar-user-initial-mobile': initial,
         'topbar-user-name': user.name,
-        'topbar-user-initial': initial,
         'user-menu-name': user.name,
         'user-menu-email': user.email,
         'dash-first-name': firstName,
@@ -247,4 +245,13 @@ export function fillSidebarUser(user) {
             el.textContent = value || '—';
         }
     });
+
+    ['sidebar-user-initial', 'sidebar-user-initial-mobile', 'topbar-user-initial'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = initial;
+        }
+    });
+
+    applyUserAvatar(user);
 }

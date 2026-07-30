@@ -1,6 +1,6 @@
 import http from '../../utils/http';
 import { toastError } from '../../utils/toast';
-import { createServerTable, escapeHtml } from '../../utils/server-table';
+import { createServerTable, escapeHtml, rowActionsCell } from '../../utils/server-table';
 import { openModal, closeModal } from '../../utils/modal';
 
 function formatDate(value) {
@@ -31,7 +31,7 @@ export function initAuditModule() {
     const table = createServerTable({
         root: panel,
         endpoint: '/audit/logs',
-        columns: 5,
+        columns: 6,
         perPage: 15,
         extraParams: () => ({
             search: searchInput?.value?.trim() || '',
@@ -60,6 +60,7 @@ export function initAuditModule() {
                     </td>
                     <td class="px-4 py-3 text-text-secondary">${escapeHtml(row.ip_address || '—')}</td>
                     <td class="px-4 py-3 text-xs text-muted font-mono">${escapeHtml(metaPreview)}</td>
+                    ${rowActionsCell(actions)}
                 </tr>
             `;
         },

@@ -51,7 +51,8 @@ class EmployeeController extends Controller
 
     public function store(StoreEmployeeRequest $request): JsonResponse
     {
-        $result = $this->employees->create($request->validated());
+        $payload = collect($request->validated())->except(['photo'])->all();
+        $result = $this->employees->create($payload, $request->file('photo'));
 
         return ApiResponse::success('Employee created and login provisioned.', [
             'employee' => (new EmployeeResource($result['employee'], true))->resolve(),
@@ -71,7 +72,13 @@ class EmployeeController extends Controller
 
     public function update(UpdateEmployeeRequest $request, string $employee): JsonResponse
     {
-        $result = $this->employees->update($employee, $request->validated());
+        $payload = collect($request->validated())->except(['photo', 'remove_photo'])->all();
+        $result = $this->employees->update(
+            $employee,
+            $payload,
+            $request->file('photo'),
+            (bool) $request->boolean('remove_photo'),
+        );
 
         return ApiResponse::success('Employee updated.', [
             'employee' => (new EmployeeResource($result['employee'], true))->resolve(),

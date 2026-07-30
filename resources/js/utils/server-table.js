@@ -1,9 +1,58 @@
 /**
  * Lightweight server-driven table helper (Axios + pagination + context menu).
  * Avoids full DataTables SSR wiring while keeping the same UX contract.
+ *
+ * Row actions: always render an Actions column via `rowActionsCell(actions)` when
+ * the row has actions. Keep `data-actions` + right-click context menu in parallel.
  */
 import http from './http';
 import { toastError } from './toast';
+
+const ACTION_ICONS = {
+    view: 'ph-eye',
+    edit: 'ph-pencil-simple',
+    delete: 'ph-trash',
+    deactivate: 'ph-user-minus',
+    unlock: 'ph-lock-key-open',
+    create: 'ph-plus',
+};
+
+/**
+ * @param {Array<{ key: string, label: string, danger?: boolean, icon?: string }>} actions
+ */
+export function rowActionsCell(actions = []) {
+    if (!actions.length) {
+        return `<td class="px-4 py-3 text-right whitespace-nowrap"><span class="text-muted text-xs">—</span></td>`;
+    }
+
+    const buttons = actions
+        .map((action) => {
+            const icon = action.icon || ACTION_ICONS[action.key] || 'ph-dots-three';
+            const tone = action.danger
+                ? 'text-danger border-danger/30 hover:bg-danger/10'
+                : 'text-heading border-border hover:bg-subtle';
+
+            return `
+                <button
+                    type="button"
+                    data-row-action="${escapeHtml(action.key)}"
+                    title="${escapeHtml(action.label)}"
+                    aria-label="${escapeHtml(action.label)}"
+                    class="inline-flex items-center justify-center gap-1 h-9 min-w-9 px-2.5 rounded-lg border text-xs font-medium transition-colors ${tone}"
+                >
+                    <i class="ph ${icon} text-base" aria-hidden="true"></i>
+                    <span class="hidden xl:inline">${escapeHtml(action.label)}</span>
+                </button>
+            `;
+        })
+        .join('');
+
+    return `
+        <td class="px-4 py-3 text-right whitespace-nowrap">
+            <div class="inline-flex items-center justify-end gap-1.5 flex-wrap">${buttons}</div>
+        </td>
+    `;
+}
 
 export function createServerTable({
     root,
@@ -73,6 +122,10 @@ export function createServerTable({
         });
     }
 
+    function resolveRow(tr) {
+        return rows.find((item) => item.id === tr?.dataset?.rowId) || null;
+    }
+
     async function load(targetPage = page) {
         if (loading) {
             return;
@@ -133,13 +186,32 @@ export function createServerTable({
         }
     });
 
+    body.addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-row-action]');
+        if (!btn) {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        hideMenu();
+        const tr = btn.closest('tr[data-row-id]');
+        const row = resolveRow(tr);
+        if (!row) {
+            return;
+        }
+        onRowAction?.(btn.dataset.rowAction, row);
+    });
+
     body.addEventListener('contextmenu', (event) => {
+        if (event.target.closest('[data-row-action]')) {
+            return;
+        }
         const tr = event.target.closest('tr[data-row-id]');
         if (!tr) {
             return;
         }
         event.preventDefault();
-        const row = rows.find((item) => item.id === tr.dataset.rowId);
+        const row = resolveRow(tr);
         if (!row) {
             return;
         }

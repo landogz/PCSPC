@@ -8,7 +8,9 @@ use App\Repositories\Employees\EmployeeRepository;
 use App\Services\Administration\PasswordPolicyService;
 use App\Services\Audit\AuditLogger;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -43,17 +45,21 @@ class EmployeeService
      * @param  array<string, mixed>  $payload
      * @return array{employee: Employee, temporary_password: string|null}
      */
-    public function create(array $payload): array
+    public function create(array $payload, ?UploadedFile $photo = null): array
     {
-        $result = DB::transaction(function () use ($payload): array {
+        $result = DB::transaction(function () use ($payload, $photo): array {
             $data = $this->mapPayload($payload);
             $employee = $this->employees->create($data);
 
             $provision = $this->provisionUser($employee, true);
             $employee = $this->employees->update($employee, ['user_id' => $provision['user']->id]);
 
+            if ($photo !== null) {
+                $employee = $this->storePhoto($employee, $photo);
+            }
+
             return [
-                'employee' => $employee,
+                'employee' => $employee->fresh(['department', 'user.roles']),
                 'temporary_password' => $provision['temporary_password'],
             ];
         });
@@ -64,6 +70,7 @@ class EmployeeService
             'employee_number' => $employee->employee_number,
             'full_name' => $employee->fullName(),
             'account_provisioned' => $result['temporary_password'] !== null || $employee->user_id !== null,
+            'has_photo' => filled($employee->photo_path),
         ]);
 
         return $result;
@@ -73,9 +80,9 @@ class EmployeeService
      * @param  array<string, mixed>  $payload
      * @return array{employee: Employee, temporary_password: string|null}
      */
-    public function update(string $uuid, array $payload): array
+    public function update(string $uuid, array $payload, ?UploadedFile $photo = null, bool $removePhoto = false): array
     {
-        $result = DB::transaction(function () use ($uuid, $payload): array {
+        $result = DB::transaction(function () use ($uuid, $payload, $photo, $removePhoto): array {
             $employee = $this->find($uuid);
             $data = $this->mapPayload($payload, $employee);
             $employee = $this->employees->update($employee, $data);
@@ -89,8 +96,14 @@ class EmployeeService
 
             $this->syncUserActiveState($employee);
 
+            if ($removePhoto) {
+                $employee = $this->clearPhoto($employee);
+            } elseif ($photo !== null) {
+                $employee = $this->storePhoto($employee, $photo);
+            }
+
             return [
-                'employee' => $employee,
+                'employee' => $employee->fresh(['department', 'user.roles']),
                 'temporary_password' => $provision['temporary_password'],
             ];
         });
@@ -102,6 +115,7 @@ class EmployeeService
             'full_name' => $employee->fullName(),
             'employment_status' => $employee->employment_status,
             'password_reset' => $result['temporary_password'] !== null,
+            'has_photo' => filled($employee->photo_path),
         ]);
 
         return $result;
@@ -144,9 +158,51 @@ class EmployeeService
             'full_name' => $employee->fullName(),
         ];
 
+        $this->clearPhoto($employee);
         $this->employees->delete($employee);
 
         $this->audit->log('employee.deleted', $meta);
+    }
+
+    public function storePhoto(Employee $employee, UploadedFile $photo): Employee
+    {
+        $this->deleteStoredPhoto($employee->photo_path);
+
+        $extension = strtolower($photo->getClientOriginalExtension() ?: $photo->extension() ?: 'jpg');
+        $path = $photo->storeAs(
+            'employees/photos',
+            $employee->uuid.'.'.$extension,
+            'public'
+        );
+
+        $updated = $this->employees->update($employee, ['photo_path' => $path]);
+
+        $this->audit->log('employee.photo_updated', [
+            'employee_id' => $updated->uuid,
+            'employee_number' => $updated->employee_number,
+        ]);
+
+        return $updated;
+    }
+
+    public function clearPhoto(Employee $employee): Employee
+    {
+        if (! filled($employee->photo_path)) {
+            return $employee;
+        }
+
+        $this->deleteStoredPhoto($employee->photo_path);
+
+        return $this->employees->update($employee, ['photo_path' => null]);
+    }
+
+    private function deleteStoredPhoto(?string $path): void
+    {
+        if (! filled($path)) {
+            return;
+        }
+
+        Storage::disk('public')->delete($path);
     }
 
     /**

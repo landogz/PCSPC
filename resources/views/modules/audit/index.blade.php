@@ -37,6 +37,7 @@
                 <th class="px-4 py-3 font-semibold">User</th>
                 <th class="px-4 py-3 font-semibold">IP</th>
                 <th class="px-4 py-3 font-semibold">Details</th>
+                <th class="px-4 py-3 font-semibold text-right">Actions</th>
             </tr>
         </x-slot:head>
 

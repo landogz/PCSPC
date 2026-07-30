@@ -131,4 +131,9 @@ class User extends Authenticatable
     {
         return in_array($slug, $this->permissionSlugs(), true);
     }
+
+    public function avatarUrl(): ?string
+    {
+        return \App\Support\ProfilePhoto::forUser($this);
+    }
 }

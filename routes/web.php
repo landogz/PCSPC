@@ -111,8 +111,8 @@ Route::prefix('api/v1')->middleware(['auth:sanctum', 'password.current'])->group
 
         Route::middleware('permission:employees.manage')->group(function (): void {
             Route::post('/', [EmployeeController::class, 'store']);
-            Route::put('/{employee}', [EmployeeController::class, 'update']);
             Route::post('/{employee}/deactivate', [EmployeeController::class, 'deactivate']);
+            Route::match(['put', 'post'], '/{employee}', [EmployeeController::class, 'update']);
             Route::delete('/{employee}', [EmployeeController::class, 'destroy']);
         });
     });

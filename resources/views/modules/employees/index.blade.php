@@ -47,6 +47,7 @@
                 <th class="px-4 py-3 font-semibold">Position</th>
                 <th class="px-4 py-3 font-semibold">Status</th>
                 <th class="px-4 py-3 font-semibold">Login</th>
+                <th class="px-4 py-3 font-semibold text-right">Actions</th>
             </tr>
         </x-slot:head>
 
@@ -64,6 +65,27 @@
                                 <button type="button" data-copy-temp-password class="h-10 px-3 rounded-xl border border-border text-sm font-medium">Copy</button>
                             </div>
                         </div>
+
+                        <section class="space-y-3" data-photo-section>
+                            <h4 class="text-sm font-semibold text-heading uppercase tracking-wide text-faint">Profile photo</h4>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                                <div class="relative flex-shrink-0">
+                                    <div data-photo-preview class="w-20 h-20 rounded-full bg-primary text-white text-2xl font-semibold flex items-center justify-center overflow-hidden border border-border">
+                                        <img data-photo-preview-img src="" alt="" class="hidden w-full h-full object-cover">
+                                        <span data-photo-preview-initial>E</span>
+                                    </div>
+                                </div>
+                                <div class="flex-1 space-y-2 min-w-0">
+                                    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="block w-full text-sm text-text-secondary file:mr-3 file:h-10 file:px-3 file:rounded-xl file:border-0 file:bg-subtle file:text-sm file:font-medium file:text-heading hover:file:bg-border">
+                                    <p class="text-xs text-muted">JPG, PNG, or WebP · max 2 MB. Shown on Employees, Security, and the signed-in user menu.</p>
+                                    <label class="inline-flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                                        <input type="checkbox" name="remove_photo" value="1" class="rounded border-border accent-primary">
+                                        Remove current photo
+                                    </label>
+                                    <p class="hidden text-xs text-danger" data-error="photo"></p>
+                                </div>
+                            </div>
+                        </section>
 
                         <section class="space-y-3">
                             <h4 class="text-sm font-semibold text-heading uppercase tracking-wide text-faint">Employment</h4>

@@ -17,7 +17,7 @@ class UserRepository
     public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
         $query = User::query()
-            ->with('roles')
+            ->with(['roles', 'employee'])
             ->latest('id');
 
         $this->applyFilters($query, $filters);
@@ -28,7 +28,7 @@ class UserRepository
     public function findByUuid(string $uuid): ?User
     {
         return User::query()
-            ->with('roles.permissions')
+            ->with(['roles.permissions', 'employee'])
             ->where('uuid', $uuid)
             ->first();
     }

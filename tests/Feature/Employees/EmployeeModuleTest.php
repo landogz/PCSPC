@@ -7,6 +7,8 @@ use App\Models\Employee;
 use App\Models\User;
 use Database\Seeders\AuthSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class EmployeeModuleTest extends TestCase
@@ -104,5 +106,51 @@ class EmployeeModuleTest extends TestCase
             ->assertJsonPath('data.employee.employment_status', 'inactive');
 
         $this->assertFalse($linkedUser->fresh()->is_active);
+    }
+
+    public function test_admin_can_upload_and_remove_employee_photo(): void
+    {
+        Storage::fake('public');
+
+        $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
+        $employee = Employee::query()->where('employee_number', 'EMP-1001')->firstOrFail();
+        $photo = UploadedFile::fake()->image('portrait.jpg', 200, 200);
+
+        $this->actingAs($admin)
+            ->post("/api/v1/employees/{$employee->uuid}", [
+                '_method' => 'PUT',
+                'employee_number' => $employee->employee_number,
+                'first_name' => $employee->first_name,
+                'last_name' => $employee->last_name,
+                'email' => $employee->email,
+                'employment_status' => $employee->employment_status,
+                'photo' => $photo,
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', true);
+
+        $employee->refresh();
+        $this->assertNotNull($employee->photo_path);
+        Storage::disk('public')->assertExists($employee->photo_path);
+        $this->assertTrue(AuthActivityLog::query()->where('event', 'employee.photo_updated')->exists());
+
+        $linkedUser = User::query()->findOrFail($employee->user_id);
+        $this->assertNotNull($linkedUser->avatarUrl());
+        $this->assertSame($employee->photoUrl(), $linkedUser->avatarUrl());
+
+        $this->actingAs($admin)
+            ->post("/api/v1/employees/{$employee->uuid}", [
+                '_method' => 'PUT',
+                'employee_number' => $employee->employee_number,
+                'first_name' => $employee->first_name,
+                'last_name' => $employee->last_name,
+                'email' => $employee->email,
+                'employment_status' => $employee->employment_status,
+                'remove_photo' => '1',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.employee.photo_url', null);
+
+        $this->assertNull($employee->fresh()->photo_path);
     }
 }

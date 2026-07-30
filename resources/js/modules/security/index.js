@@ -1,8 +1,9 @@
 import http from '../../utils/http';
 import { setButtonLoading } from '../../utils/button-loading';
 import { toastSuccess, toastError, confirmAction } from '../../utils/toast';
-import { createServerTable, escapeHtml, statusBadge, lockedBadge } from '../../utils/server-table';
+import { createServerTable, escapeHtml, statusBadge, lockedBadge, rowActionsCell } from '../../utils/server-table';
 import { openModal, closeModal } from '../../utils/modal';
+import { avatarMarkup } from '../../utils/avatar';
 
 function clearErrors(form) {
     form.querySelectorAll('[data-error]').forEach((el) => {
@@ -142,8 +143,15 @@ function initUsersPanel(root) {
                     type="button"
                     data-employee-option
                     data-employee-json="${payload}"
-                    class="flex w-full items-start gap-2 px-3 py-2.5 text-left text-sm hover:bg-subtle ${disabled ? 'opacity-60 cursor-not-allowed' : ''}"
+                    class="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-subtle ${disabled ? 'opacity-60 cursor-not-allowed' : ''}"
                 >
+                    ${avatarMarkup({
+                        url: item.photo_url,
+                        name: item.full_name,
+                        email: item.email,
+                        sizeClass: 'w-8 h-8',
+                        textClass: 'text-xs',
+                    })}
                     <div class="min-w-0 flex-1">
                         <div class="font-medium text-heading truncate">${escapeHtml(item.full_name || '—')}</div>
                         <div class="text-xs text-muted truncate">${escapeHtml(item.employee_number || '—')} · ${escapeHtml(item.email || 'No email')}</div>
@@ -169,7 +177,7 @@ function initUsersPanel(root) {
     const table = createServerTable({
         root: panel,
         endpoint: '/security/users',
-        columns: 7,
+        columns: 8,
         perPage: 10,
         extraParams: () => ({
             search: searchInput?.value?.trim() || '',
@@ -192,12 +200,23 @@ function initUsersPanel(root) {
             return `
                 <tr class="hover:bg-subtle/60 ${row.is_locked ? 'bg-warning-soft/40' : ''}" data-row-id="${escapeHtml(row.id)}" data-actions='${JSON.stringify(actions)}'>
                     <td class="px-4 py-3">
-                        <div class="font-medium text-heading flex items-center gap-1.5">
-                            ${row.is_locked ? '<i class="ph ph-lock-key text-base text-heading" title="Account locked"></i>' : ''}
-                            ${escapeHtml(row.name)}
-                            ${row.is_protected ? '<span class="inline-flex items-center h-6 px-2 rounded-md bg-subtle text-[10px] font-semibold text-muted uppercase">Protected</span>' : ''}
+                        <div class="flex items-center gap-3 min-w-0">
+                            ${avatarMarkup({
+                                url: row.avatar_url,
+                                name: row.name,
+                                email: row.email,
+                                sizeClass: 'w-9 h-9',
+                                textClass: 'text-xs',
+                            })}
+                            <div class="min-w-0">
+                                <div class="font-medium text-heading flex items-center gap-1.5 flex-wrap">
+                                    ${row.is_locked ? '<i class="ph ph-lock-key text-base text-heading" title="Account locked"></i>' : ''}
+                                    ${escapeHtml(row.name)}
+                                    ${row.is_protected ? '<span class="inline-flex items-center h-6 px-2 rounded-md bg-subtle text-[10px] font-semibold text-muted uppercase">Protected</span>' : ''}
+                                </div>
+                                <div class="text-xs text-muted truncate">${escapeHtml(row.email)}</div>
+                            </div>
                         </div>
-                        <div class="text-xs text-muted">${escapeHtml(row.email)}</div>
                     </td>
                     <td class="px-4 py-3 text-text-secondary">${escapeHtml(row.employee_number || '—')}</td>
                     <td class="px-4 py-3 text-text-secondary">${escapeHtml(rolesLabel)}</td>
@@ -205,6 +224,7 @@ function initUsersPanel(root) {
                     <td class="px-4 py-3">${lockedBadge(row.is_locked, row.locked_until)}</td>
                     <td class="px-4 py-3">${row.mfa_enabled ? 'On' : 'Off'}</td>
                     <td class="px-4 py-3 text-text-secondary whitespace-nowrap">${escapeHtml(formatDate(row.last_login_at))}</td>
+                    ${rowActionsCell(actions)}
                 </tr>
             `;
         },
@@ -531,7 +551,7 @@ function initRolesPanel(root) {
     const table = createServerTable({
         root: panel,
         endpoint: '/security/rbac/roles',
-        columns: 5,
+        columns: 6,
         perPage: 10,
         extraParams: () => ({
             search: searchInput?.value?.trim() || '',
@@ -555,6 +575,7 @@ function initRolesPanel(root) {
                     <td class="px-4 py-3 text-text-secondary">${escapeHtml(String(row.permissions_count ?? 0))}</td>
                     <td class="px-4 py-3 text-text-secondary">${escapeHtml(String(row.users_count ?? 0))}</td>
                     <td class="px-4 py-3">${row.requires_mfa ? 'Required' : 'Optional'}</td>
+                    ${rowActionsCell(actions)}
                 </tr>
             `;
         },
@@ -567,8 +588,7 @@ function initRolesPanel(root) {
                 const confirmed = await confirmAction({
                     title: 'Delete role?',
                     text: `${row.name} will be permanently removed.`,
-                    confirmButtonText: 'Delete',
-                });
+                    confirmButtonText: 'Delete',                });
                 if (!confirmed.isConfirmed) {
                     return;
                 }

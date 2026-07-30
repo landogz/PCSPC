@@ -76,8 +76,9 @@
                     aria-haspopup="menu"
                     aria-expanded="false"
                 >
-                    <span class="w-7 h-7 rounded-full bg-primary text-white text-xs font-semibold flex items-center justify-center flex-shrink-0">
-                        <span id="topbar-user-initial">U</span>
+                    <span class="w-7 h-7 rounded-full bg-primary text-white text-xs font-semibold flex items-center justify-center flex-shrink-0 overflow-hidden" data-user-avatar>
+                        <img data-user-avatar-img alt="" class="hidden w-full h-full object-cover">
+                        <span id="topbar-user-initial" data-user-avatar-initial>U</span>
                     </span>
                     <span id="topbar-user-name" class="hidden sm:block text-sm font-medium text-heading max-w-[100px] truncate">—</span>
                     <i class="ph ph-caret-down text-muted text-sm hidden sm:block"></i>

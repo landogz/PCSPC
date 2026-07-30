@@ -30,6 +30,7 @@ class EmployeeResource extends JsonResource
             'suffix' => $this->suffix,
             'full_name' => $this->fullName(),
             'email' => $this->email,
+            'photo_url' => $this->photoUrl(),
             'mobile' => $this->mobile,
             'department_id' => $this->department?->uuid,
             'department' => $this->when($this->relationLoaded('department') && $this->department, fn () => [

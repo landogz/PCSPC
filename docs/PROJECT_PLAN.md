@@ -210,6 +210,7 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 - ✅ Create/update provisions or links a User and assigns **Employee** role; temp password on new login
 - ✅ Deactivate employee syncs linked `user.is_active = false`
 - ✅ Employees SPA (`/modules/employees`) — filters, context menu, sectioned modal
+- ✅ Employee profile photo (upload/remove on 201) → wired to linked User `avatar_url`; shown in Employees table, Security users/search, sidebar & topbar
 - ✅ Departments (`/modules/departments`) — org units CRUD
 - ⬜ Dependents, education, employment history, training, medical stubs
 - ⬜ Historical salary / position / category tracking
@@ -309,7 +310,7 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 |---------------|---------|-------|--------|
 | Administration | ADM-001…010 | P2–P3 | 🔶 hub + departments + password policy; holidays/shifts/params open |
 | User Access & Security | SEC-001…002 | P2–P3 | ✅ |
-| Employee Management | EMP-001…006 | P3 | 🔶 201 v1 + user link; dependents/history/Excel open |
+| Employee Management | EMP-001…006 | P3 | 🔶 201 v1 + photo/avatar + user link; dependents/history/Excel open |
 | Leave Management | LEV-001…002 | P4 | ⬜ scaffold only |
 | Overtime Management | OT-001 | P4 | ⬜ scaffold only |
 | Timekeeping + Biometric | TM-001…002 | P5 | ⬜ scaffold only |

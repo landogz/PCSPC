@@ -18,6 +18,7 @@ class Employee extends Model
         'last_name',
         'suffix',
         'email',
+        'photo_path',
         'mobile',
         'department_id',
         'position_title',
@@ -93,5 +94,10 @@ class Employee extends Model
     public function isActiveEmployment(): bool
     {
         return in_array($this->employment_status, ['active', 'on_leave'], true);
+    }
+
+    public function photoUrl(): ?string
+    {
+        return \App\Support\ProfilePhoto::forEmployee($this);
     }
 }

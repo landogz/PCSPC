@@ -47,7 +47,7 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user()?->loadMissing('roles.permissions');
+        $user = $request->user()?->loadMissing(['roles.permissions', 'employee']);
 
         if ($user === null) {
             return ApiResponse::error('Unauthenticated.', [], 401);

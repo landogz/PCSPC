@@ -25,6 +25,7 @@ class SecurityUserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'employee_number' => $this->employee_number,
+            'avatar_url' => $this->avatarUrl(),
             'is_active' => (bool) $this->is_active,
             'is_protected' => $this->isProtected(),
             'can_delete' => ! $this->isProtected(),

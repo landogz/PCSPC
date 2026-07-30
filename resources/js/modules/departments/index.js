@@ -1,7 +1,7 @@
 import http from '../../utils/http';
 import { setButtonLoading } from '../../utils/button-loading';
 import { toastSuccess, toastError, confirmAction } from '../../utils/toast';
-import { createServerTable, escapeHtml, statusBadge } from '../../utils/server-table';
+import { createServerTable, escapeHtml, statusBadge, rowActionsCell } from '../../utils/server-table';
 import { openModal, closeModal } from '../../utils/modal';
 
 function clearErrors(form) {
@@ -39,7 +39,7 @@ export function initDepartmentsModule() {
     const table = createServerTable({
         root: panel,
         endpoint: '/departments',
-        columns: 4,
+        columns: 5,
         perPage: 10,
         extraParams: () => ({
             search: searchInput?.value?.trim() || '',
@@ -56,6 +56,7 @@ export function initDepartmentsModule() {
                     <td class="px-4 py-3 text-heading">${escapeHtml(row.name)}</td>
                     <td class="px-4 py-3 text-text-secondary">${escapeHtml(row.description || '—')}</td>
                     <td class="px-4 py-3">${statusBadge(row.is_active)}</td>
+                    ${rowActionsCell(actions)}
                 </tr>
             `;
         },

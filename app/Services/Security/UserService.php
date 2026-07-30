@@ -53,6 +53,7 @@ class UserService
                 'employee_number' => $employee->employee_number,
                 'full_name' => $employee->fullName(),
                 'email' => $employee->email,
+                'photo_url' => $employee->photoUrl(),
                 'has_account' => $hasAccount,
                 'label' => trim($employee->employee_number.' — '.$employee->fullName()),
             ];

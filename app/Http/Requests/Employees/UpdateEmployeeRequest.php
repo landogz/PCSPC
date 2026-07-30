@@ -56,6 +56,17 @@ class UpdateEmployeeRequest extends FormRequest
             'sss_number' => ['nullable', 'string', 'max:50'],
             'philhealth_number' => ['nullable', 'string', 'max:50'],
             'pagibig_number' => ['nullable', 'string', 'max:50'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_photo' => ['sometimes', 'boolean'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('remove_photo')) {
+            $this->merge([
+                'remove_photo' => filter_var($this->input('remove_photo'), FILTER_VALIDATE_BOOLEAN),
+            ]);
+        }
     }
 }

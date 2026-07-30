@@ -12,7 +12,7 @@ class AuthRepository
     public function findByLogin(string $login): ?User
     {
         return User::query()
-            ->with('roles.permissions')
+            ->with(['roles.permissions', 'employee'])
             ->where(function ($query) use ($login): void {
                 $query->where('email', $login)
                     ->orWhere('employee_number', $login);
@@ -23,7 +23,7 @@ class AuthRepository
     public function findByUuid(string $uuid): ?User
     {
         return User::query()
-            ->with('roles.permissions')
+            ->with(['roles.permissions', 'employee'])
             ->where('uuid', $uuid)
             ->first();
     }

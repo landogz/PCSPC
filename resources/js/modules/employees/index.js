@@ -1,8 +1,10 @@
 import http from '../../utils/http';
 import { setButtonLoading } from '../../utils/button-loading';
 import { toastSuccess, toastError, confirmAction } from '../../utils/toast';
-import { createServerTable, escapeHtml } from '../../utils/server-table';
+import { createServerTable, escapeHtml, rowActionsCell } from '../../utils/server-table';
 import { openModal, closeModal } from '../../utils/modal';
+import { avatarInitial, avatarMarkup } from '../../utils/avatar';
+import { fillSidebarUser } from '../layout';
 
 const FIELD_KEYS = [
     'employee_number',
@@ -92,7 +94,7 @@ export function initEmployeesModule() {
     const table = createServerTable({
         root: panel,
         endpoint: '/employees',
-        columns: 6,
+        columns: 7,
         perPage: 10,
         extraParams: () => ({
             search: searchInput?.value?.trim() || '',
@@ -118,11 +120,25 @@ export function initEmployeesModule() {
             return `
                 <tr class="hover:bg-subtle/60" data-row-id="${escapeHtml(row.id)}" data-actions='${JSON.stringify(actions)}'>
                     <td class="px-4 py-3 font-semibold text-heading whitespace-nowrap">${escapeHtml(row.employee_number)}</td>
-                    <td class="px-4 py-3 text-heading">${escapeHtml(row.full_name)}</td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            ${avatarMarkup({
+                                url: row.photo_url,
+                                name: row.full_name,
+                                sizeClass: 'w-9 h-9',
+                                textClass: 'text-xs',
+                            })}
+                            <div class="min-w-0">
+                                <div class="font-medium text-heading truncate">${escapeHtml(row.full_name)}</div>
+                                <div class="text-xs text-muted truncate">${escapeHtml(row.email || '')}</div>
+                            </div>
+                        </div>
+                    </td>
                     <td class="px-4 py-3 text-text-secondary">${escapeHtml(row.department?.name || '—')}</td>
                     <td class="px-4 py-3 text-text-secondary">${escapeHtml(row.position_title || '—')}</td>
                     <td class="px-4 py-3">${employmentBadge(row.employment_status)}</td>
                     <td class="px-4 py-3">${login}</td>
+                    ${rowActionsCell(actions)}
                 </tr>
             `;
         },
@@ -244,15 +260,46 @@ export function initEmployeesModule() {
         }
     }
 
+    let currentPhotoUrl = null;
+
+    function setPhotoPreview(url, name = '') {
+        const preview = form.querySelector('[data-photo-preview]');
+        const img = form.querySelector('[data-photo-preview-img]');
+        const initial = form.querySelector('[data-photo-preview-initial]');
+        if (!preview || !img || !initial) {
+            return;
+        }
+
+        initial.textContent = avatarInitial(name || form.first_name?.value, form.email?.value);
+
+        if (url) {
+            img.src = url;
+            img.classList.remove('hidden');
+            initial.classList.add('hidden');
+            preview.classList.remove('bg-primary', 'text-white');
+            return;
+        }
+
+        img.removeAttribute('src');
+        img.classList.add('hidden');
+        initial.classList.remove('hidden');
+        preview.classList.add('bg-primary', 'text-white');
+    }
+
     function resetForm() {
         form.reset();
         form.id.value = '';
         editingId = null;
+        currentPhotoUrl = null;
         clearErrors(form);
         hideTempPassword();
         setLinkedUser(null);
+        setPhotoPreview(null);
         form.nationality.value = 'Filipino';
         form.employment_status.value = 'active';
+        if (form.remove_photo) {
+            form.remove_photo.checked = false;
+        }
         const submit = form.querySelector('[type="submit"]');
         if (submit) {
             submit.classList.toggle('hidden', !canManage);
@@ -264,6 +311,12 @@ export function initEmployeesModule() {
                 field.disabled = !canManage;
             }
         });
+        if (form.photo) {
+            form.photo.disabled = !canManage;
+        }
+        if (form.remove_photo) {
+            form.remove_photo.disabled = !canManage;
+        }
     }
 
     function fillForm(employee) {
@@ -276,6 +329,11 @@ export function initEmployeesModule() {
             const value = employee[key];
             field.value = value == null ? '' : value;
         });
+        currentPhotoUrl = employee.photo_url || null;
+        setPhotoPreview(currentPhotoUrl, employee.full_name);
+        if (form.remove_photo) {
+            form.remove_photo.checked = false;
+        }
         setLinkedUser(employee.user || null);
     }
 
@@ -302,22 +360,66 @@ export function initEmployeesModule() {
         }
     }
 
-    function buildPayload() {
-        const payload = {};
+    function buildFormData() {
+        const formData = new FormData();
         FIELD_KEYS.forEach((key) => {
             const field = form.elements.namedItem(key);
             if (!field) {
                 return;
             }
             if (key === 'employee_number' || key === 'first_name' || key === 'last_name' || key === 'email' || key === 'employment_status') {
-                payload[key] = String(field.value || '').trim();
+                formData.append(key, String(field.value || '').trim());
                 return;
             }
-            payload[key] = emptyToNull(field.value);
+            const value = emptyToNull(field.value);
+            formData.append(key, value == null ? '' : value);
         });
 
-        return payload;
+        const file = form.photo?.files?.[0];
+        if (file) {
+            formData.append('photo', file);
+        }
+        if (form.remove_photo?.checked) {
+            formData.append('remove_photo', '1');
+        }
+
+        return formData;
     }
+
+    async function refreshCurrentUserAvatar() {
+        try {
+            const { data } = await http.get('/auth/me');
+            if (data?.data?.user) {
+                fillSidebarUser(data.data.user);
+            }
+        } catch {
+            // Ignore — layout will refresh on next navigation.
+        }
+    }
+
+    form.photo?.addEventListener('change', () => {
+        const file = form.photo.files?.[0];
+        if (!file) {
+            setPhotoPreview(currentPhotoUrl, `${form.first_name.value} ${form.last_name.value}`.trim());
+            return;
+        }
+        if (form.remove_photo) {
+            form.remove_photo.checked = false;
+        }
+        const objectUrl = URL.createObjectURL(file);
+        setPhotoPreview(objectUrl, `${form.first_name.value} ${form.last_name.value}`.trim());
+    });
+
+    form.remove_photo?.addEventListener('change', () => {
+        if (form.remove_photo.checked) {
+            if (form.photo) {
+                form.photo.value = '';
+            }
+            setPhotoPreview(null, `${form.first_name.value} ${form.last_name.value}`.trim());
+            return;
+        }
+        setPhotoPreview(currentPhotoUrl, `${form.first_name.value} ${form.last_name.value}`.trim());
+    });
 
     panel.querySelector('[data-action="create"]')?.addEventListener('click', openCreate);
 
@@ -354,17 +456,21 @@ export function initEmployeesModule() {
         clearErrors(form);
         hideTempPassword();
 
-        const payload = buildPayload();
+        const formData = buildFormData();
         const submit = form.querySelector('[type="submit"]');
         setButtonLoading(submit, true, 'Saving…');
 
         try {
             const { data } = editingId
-                ? await http.put(`/employees/${editingId}`, payload)
-                : await http.post('/employees', payload);
+                ? await http.post(`/employees/${editingId}`, (() => {
+                    formData.append('_method', 'PUT');
+                    return formData;
+                })())
+                : await http.post('/employees', formData);
 
             toastSuccess(data.message || 'Employee saved');
             table.reload(true);
+            await refreshCurrentUserAvatar();
 
             if (data.data?.temporary_password) {
                 fillForm(data.data.employee);

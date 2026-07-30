@@ -44,6 +44,7 @@ class StoreEmployeeRequest extends FormRequest
             'sss_number' => ['nullable', 'string', 'max:50'],
             'philhealth_number' => ['nullable', 'string', 'max:50'],
             'pagibig_number' => ['nullable', 'string', 'max:50'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
 }

@@ -55,8 +55,9 @@
     </nav>
 
     <div class="p-4 border-t border-border flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
-            <span id="sidebar-user-initial-mobile">U</span>
+        <div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold flex-shrink-0 overflow-hidden" data-user-avatar>
+            <img data-user-avatar-img alt="" class="hidden w-full h-full object-cover">
+            <span id="sidebar-user-initial-mobile" data-user-avatar-initial>U</span>
         </div>
         <div class="min-w-0 flex-1">
             <p id="sidebar-user-name-mobile" class="text-sm font-semibold text-white truncate">—</p>
@@ -113,8 +114,9 @@
     <div class="px-3 py-3 border-t border-border-subtle">
         <div class="flex items-center gap-3 rounded-xl p-2 hover:bg-white/5 transition-colors cursor-pointer">
             <div class="relative flex-shrink-0">
-                <div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold">
-                    <span id="sidebar-user-initial">U</span>
+                <div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold overflow-hidden" data-user-avatar>
+                    <img data-user-avatar-img alt="" class="hidden w-full h-full object-cover">
+                    <span id="sidebar-user-initial" data-user-avatar-initial>U</span>
                 </div>
                 <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-primary border-2 border-sidebar"></span>
             </div>

@@ -77,6 +77,7 @@
                         <th class="px-4 py-3 font-semibold">Locked</th>
                         <th class="px-4 py-3 font-semibold">MFA</th>
                         <th class="px-4 py-3 font-semibold">Last login</th>
+                        <th class="px-4 py-3 font-semibold text-right">Actions</th>
                     </tr>
                 </x-slot:head>
 
@@ -203,6 +204,7 @@
                         <th class="px-4 py-3 font-semibold">Permissions</th>
                         <th class="px-4 py-3 font-semibold">Users</th>
                         <th class="px-4 py-3 font-semibold">MFA</th>
+                        <th class="px-4 py-3 font-semibold text-right">Actions</th>
                     </tr>
                 </x-slot:head>
 

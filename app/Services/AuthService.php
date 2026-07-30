@@ -314,7 +314,7 @@ class AuthService
             request()->session()->regenerate();
         }
 
-        $user->load('roles.permissions');
+        $user->load(['roles.permissions', 'employee']);
 
         $passwordStatus = $this->passwordPolicy->statusFor($user);
 
@@ -351,6 +351,7 @@ class AuthService
                     'name' => $user->name,
                     'email' => $user->email,
                     'employee_number' => $user->employee_number,
+                    'avatar_url' => $user->avatarUrl(),
                     'is_active' => $user->is_active,
                     'mfa_enabled' => $user->mfa_enabled,
                     'roles' => $user->roleSlugs(),
