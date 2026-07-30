@@ -41,18 +41,9 @@
         </x-slot:head>
 
         <x-slot:modals>
-            <div id="audit-log-modal" class="hidden fixed inset-0 z-[70] items-center justify-center p-4">
-                <div class="absolute inset-0 bg-black/40" data-modal-dismiss></div>
-                <div class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-surface shadow-xl">
-                    <div class="p-5 border-b border-border flex items-center justify-between gap-3">
-                        <h3 class="text-lg font-semibold text-heading">Event details</h3>
-                        <button type="button" class="h-9 w-9 rounded-lg hover:bg-subtle" data-modal-dismiss aria-label="Close">
-                            <i class="ph ph-x text-lg"></i>
-                        </button>
-                    </div>
-                    <div class="p-5 space-y-3 text-sm" data-audit-detail></div>
-                </div>
-            </div>
+            <x-ui.modal id="audit-log-modal" title="Event details">
+                <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-3 text-sm" data-audit-detail></div>
+            </x-ui.modal>
         </x-slot:modals>
     </x-ui.data-panel>
 </section>

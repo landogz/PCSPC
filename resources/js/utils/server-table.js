@@ -166,11 +166,42 @@ export function escapeHtml(value) {
 }
 
 export function statusBadge(active, locked = false) {
+    const parts = [];
+
     if (locked) {
-        return '<span class="inline-flex items-center h-7 px-2.5 rounded-lg bg-warning-soft text-warning text-xs font-semibold">Locked</span>';
+        parts.push(
+            '<span class="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg bg-warning-soft border border-warning/30 text-heading text-xs font-semibold"><i class="ph ph-lock-key text-sm"></i>Locked</span>',
+        );
     }
+
     if (active) {
-        return '<span class="inline-flex items-center h-7 px-2.5 rounded-lg bg-success-soft text-success text-xs font-semibold">Active</span>';
+        parts.push(
+            '<span class="inline-flex items-center h-7 px-2.5 rounded-lg bg-success-soft text-success text-xs font-semibold">Active</span>',
+        );
+    } else {
+        parts.push(
+            '<span class="inline-flex items-center h-7 px-2.5 rounded-lg bg-subtle text-muted text-xs font-semibold">Inactive</span>',
+        );
     }
-    return '<span class="inline-flex items-center h-7 px-2.5 rounded-lg bg-subtle text-muted text-xs font-semibold">Inactive</span>';
+
+    return `<div class="flex flex-wrap items-center gap-1.5">${parts.join('')}</div>`;
+}
+
+export function lockedBadge(locked, lockedUntil = null) {
+    if (!locked) {
+        return '<span class="text-sm text-muted">No</span>';
+    }
+
+    const until = lockedUntil
+        ? `<div class="text-[11px] text-muted mt-0.5">Until ${escapeHtml(new Date(lockedUntil).toLocaleString())}</div>`
+        : '';
+
+    return `
+        <div>
+            <span class="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg bg-warning-soft border border-warning/30 text-heading text-xs font-semibold">
+                <i class="ph ph-lock-key text-sm"></i>Yes
+            </span>
+            ${until}
+        </div>
+    `;
 }

@@ -17,6 +17,12 @@ class ModulePageController extends Controller
             abort(404);
         }
 
+        $user = request()->user();
+
+        if (! Navigation::userCanAccess($user, $item)) {
+            abort(403, 'You do not have permission to access this module.');
+        }
+
         $view = "modules.{$module}.index";
 
         if (! view()->exists($view)) {

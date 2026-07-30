@@ -2,14 +2,53 @@
 
 namespace App\Support;
 
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+
 class Navigation
 {
     /**
+     * All configured sections (unfiltered).
+     *
      * @return list<array<string, mixed>>
      */
-    public static function sections(): array
+    public static function allSections(): array
     {
         return config('navigation.sections', []);
+    }
+
+    /**
+     * Sidebar sections visible to the given (or current) user.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function sections(?User $user = null): array
+    {
+        $user ??= Auth::user();
+
+        if ($user === null) {
+            return [];
+        }
+
+        $sections = [];
+
+        foreach (self::allSections() as $section) {
+            $items = [];
+
+            foreach ($section['items'] ?? [] as $item) {
+                if (self::userCanAccess($user, $item)) {
+                    $items[] = $item;
+                }
+            }
+
+            if ($items === []) {
+                continue;
+            }
+
+            $sections[] = array_merge($section, ['items' => $items]);
+        }
+
+        return $sections;
     }
 
     /**
@@ -17,11 +56,12 @@ class Navigation
      *
      * @return array<string, array<string, mixed>>
      */
-    public static function modulesByKey(): array
+    public static function modulesByKey(?User $user = null, bool $filtered = false): array
     {
         $map = [];
+        $sections = $filtered ? self::sections($user) : self::allSections();
 
-        foreach (self::sections() as $section) {
+        foreach ($sections as $section) {
             foreach ($section['items'] ?? [] as $item) {
                 $key = $item['key'] ?? null;
                 if (! is_string($key) || $key === '') {
@@ -50,6 +90,32 @@ class Navigation
             array_keys(self::modulesByKey()),
             static fn (string $key): bool => $key !== 'dashboard'
         ));
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    public static function userCanAccess(?User $user, array $item): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+
+        $permission = $item['permission'] ?? null;
+
+        if ($permission === null || $permission === '') {
+            return false;
+        }
+
+        $required = is_array($permission) ? $permission : [$permission];
+
+        foreach ($required as $slug) {
+            if (is_string($slug) && $slug !== '' && $user->hasPermission($slug)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function href(array $item): string

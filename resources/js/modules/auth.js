@@ -1,18 +1,7 @@
 import http from '../utils/http';
+import { setButtonLoading } from '../utils/button-loading';
 import { toastSuccess, toastError, confirmAction } from '../utils/toast';
 import { fillSidebarUser } from './layout';
-
-function setLoading(button, loading, label = null) {
-    if (!button) {
-        return;
-    }
-
-    button.disabled = loading;
-    if (label) {
-        button.dataset.label ??= button.textContent.trim();
-        button.textContent = loading ? label : button.dataset.label;
-    }
-}
 
 function clearErrors(form) {
     form.querySelectorAll('[data-error]').forEach((el) => {
@@ -38,7 +27,12 @@ async function ensureCsrfCookie() {
     });
 }
 
-function redirectToDashboard() {
+function redirectAfterAuth(payload = {}) {
+    if (payload.password_change_required || payload.user?.password_change_required) {
+        window.location.href = '/account/password';
+        return;
+    }
+
     window.location.href = '/dashboard';
 }
 
@@ -83,9 +77,9 @@ function initLoginPage() {
 
     async function performLogin({ login, password, autoMfa = false, triggerButton = loginSubmit }) {
         clearErrors(form);
-        setLoading(triggerButton, true, 'Signing in…');
+        setButtonLoading(triggerButton, true, 'Signing in…');
         if (triggerButton !== loginSubmit) {
-            setLoading(loginSubmit, true, 'Signing in…');
+            setButtonLoading(loginSubmit, true, 'Signing in…');
         }
 
         try {
@@ -110,7 +104,7 @@ function initLoginPage() {
             }
 
             toastSuccess(data.message || 'Login successful');
-            redirectToDashboard();
+            redirectAfterAuth(data.data || {});
         } catch (error) {
             const response = error.response?.data;
             const status = error.response?.status;
@@ -122,16 +116,16 @@ function initLoginPage() {
                 toastError(response?.message || 'Unable to sign in');
             }
         } finally {
-            setLoading(triggerButton, false);
+            setButtonLoading(triggerButton, false);
             if (triggerButton !== loginSubmit) {
-                setLoading(loginSubmit, false);
+                setButtonLoading(loginSubmit, false);
             }
         }
     }
 
     async function verifyMfaCode(token, otp, triggerButton = mfaSubmit) {
         clearErrors(form);
-        setLoading(triggerButton, true, 'Verifying…');
+        setButtonLoading(triggerButton, true, 'Verifying…');
 
         try {
             await ensureCsrfCookie();
@@ -142,7 +136,7 @@ function initLoginPage() {
             });
 
             toastSuccess(data.message || 'Login successful');
-            redirectToDashboard();
+            redirectAfterAuth(data.data || {});
         } catch (error) {
             const response = error.response?.data;
             const status = error.response?.status;
@@ -154,7 +148,7 @@ function initLoginPage() {
                 toastError(response?.message || 'Invalid authentication code');
             }
         } finally {
-            setLoading(triggerButton, false);
+            setButtonLoading(triggerButton, false);
         }
     }
 
@@ -195,6 +189,10 @@ async function initDashboardPage() {
     try {
         const { data } = await http.get('/auth/me');
         const user = data?.data?.user;
+        if (data?.data?.password_change_required || user?.password_change_required) {
+            window.location.assign('/account/password');
+            return;
+        }
         if (nameEl) {
             nameEl.textContent = user?.name ?? '—';
         }
@@ -215,6 +213,72 @@ async function initDashboardPage() {
     }
 }
 
+function initChangePasswordPage() {
+    const root = document.querySelector('[data-module="change-password"]');
+    const form = document.getElementById('change-password-form');
+    if (!root || !form) {
+        return;
+    }
+
+    const submitBtn = document.getElementById('change-password-submit');
+    const hintEl = root.querySelector('[data-password-hint]');
+    const reasonEl = root.querySelector('[data-password-reason]');
+
+    (async () => {
+        try {
+            const [{ data: meData }, { data: policyData }] = await Promise.all([
+                http.get('/auth/me'),
+                http.get('/auth/password/policy'),
+            ]);
+
+            if (!meData?.data?.password_change_required && !meData?.data?.user?.password_change_required) {
+                window.location.assign('/dashboard');
+                return;
+            }
+
+            const reason = meData?.data?.password_change_reason || meData?.data?.user?.password_change_reason;
+            if (reasonEl) {
+                reasonEl.textContent = reason === 'expired'
+                    ? 'Your password has expired. Set a new password to continue.'
+                    : 'You must set a new password before continuing.';
+            }
+
+            if (hintEl) {
+                hintEl.textContent = policyData?.data?.policy?.hint
+                    || meData?.data?.password_policy_hint
+                    || '';
+            }
+        } catch {
+            toastError('Session expired. Please sign in again.');
+            window.location.assign('/login');
+        }
+    })();
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        clearErrors(form);
+        setButtonLoading(submitBtn, true, 'Saving…');
+
+        try {
+            await ensureCsrfCookie();
+            const { data } = await http.post('/auth/password', {
+                current_password: form.current_password.value,
+                password: form.password.value,
+                password_confirmation: form.password_confirmation.value,
+            });
+
+            toastSuccess(data.message || 'Password updated');
+            window.location.assign('/dashboard');
+        } catch (error) {
+            const response = error.response?.data;
+            showErrors(form, response?.errors || {});
+            toastError(response?.message || 'Unable to update password');
+        } finally {
+            setButtonLoading(submitBtn, false);
+        }
+    });
+}
+
 function initLogoutControls() {
     const logoutBtn = document.getElementById('logout-btn');
 
@@ -229,16 +293,20 @@ function initLogoutControls() {
             return;
         }
 
+        setButtonLoading(logoutBtn, true, 'Signing out…');
+
         try {
             await http.post('/auth/logout');
             toastSuccess('Signed out');
             window.location.assign('/login');
         } catch (error) {
             toastError(error.response?.data?.message || 'Unable to sign out');
+            setButtonLoading(logoutBtn, false);
         }
     });
 
-    const logoutOthersHandler = async () => {
+    const logoutOthersHandler = async (event) => {
+        const button = event.currentTarget;
         const result = await confirmAction({
             title: 'Logout other devices?',
             text: 'Active tokens on other devices will be revoked.',
@@ -249,11 +317,15 @@ function initLogoutControls() {
             return;
         }
 
+        setButtonLoading(button, true, 'Logging out…');
+
         try {
             const { data } = await http.post('/auth/logout-others');
             toastSuccess(data.message || 'Other devices logged out');
         } catch (error) {
             toastError(error.response?.data?.message || 'Unable to logout other devices');
+        } finally {
+            setButtonLoading(button, false);
         }
     };
 
@@ -264,6 +336,7 @@ function initLogoutControls() {
 
 export function initAuthModule() {
     initLoginPage();
+    initChangePasswordPage();
     initDashboardPage();
     initLogoutControls();
 }

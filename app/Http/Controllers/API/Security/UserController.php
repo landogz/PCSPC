@@ -47,6 +47,15 @@ class UserController extends Controller
         ], 201);
     }
 
+    public function searchEmployees(Request $request): JsonResponse
+    {
+        $items = $this->users->searchEmployees((string) $request->query('search', ''));
+
+        return ApiResponse::success('Employees retrieved.', [
+            'items' => $items,
+        ]);
+    }
+
     public function show(string $user): JsonResponse
     {
         $model = $this->users->find($user);
@@ -81,6 +90,13 @@ class UserController extends Controller
         return ApiResponse::success('User deactivated.', [
             'user' => (new SecurityUserResource($model))->resolve(),
         ]);
+    }
+
+    public function destroy(Request $request, string $user): JsonResponse
+    {
+        $this->users->delete($user, $request->user());
+
+        return ApiResponse::success('User deleted.');
     }
 
     public function roles(): JsonResponse

@@ -19,13 +19,11 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'employee_number' => ['nullable', 'string', 'max:50', 'unique:users,employee_number'],
+            'employee_id' => ['required', 'uuid', Rule::exists('employees', 'uuid')],
             'password' => ['required', 'string', Password::defaults()],
             'is_active' => ['sometimes', 'boolean'],
             'mfa_enabled' => ['sometimes', 'boolean'],
-            'role_ids' => ['sometimes', 'array'],
+            'role_ids' => ['required', 'array', 'size:1'],
             'role_ids.*' => ['uuid', Rule::exists('roles', 'uuid')],
         ];
     }

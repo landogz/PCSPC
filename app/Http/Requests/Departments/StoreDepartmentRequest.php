@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Administration;
+namespace App\Http\Requests\Departments;
 
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -8,7 +8,7 @@ class StoreDepartmentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasPermission('administration.manage') ?? false;
+        return $this->user()?->hasPermission('departments.manage') ?? false;
     }
 
     /**

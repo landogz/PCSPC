@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Security;
 
+use App\Models\Employee;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -70,6 +71,73 @@ class UserRepository
         ])->save();
 
         return $user->fresh(['roles']);
+    }
+
+    public function delete(User $user): void
+    {
+        $user->roles()->detach();
+        $user->tokens()->delete();
+        $user->delete();
+    }
+
+    public function findEmployeeByUuid(string $uuid): ?Employee
+    {
+        return Employee::query()
+            ->with('user:id,uuid,email,employee_number')
+            ->where('uuid', $uuid)
+            ->first();
+    }
+
+    /**
+     * @return Collection<int, Employee>
+     */
+    public function searchEmployeesForAccount(string $search, int $limit = 15): Collection
+    {
+        $search = trim($search);
+        $query = Employee::query()
+            ->with('user:id,uuid,email,employee_number')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->limit($limit);
+
+        if ($search !== '') {
+            $query->where(function (Builder $inner) use ($search): void {
+                $inner->where('employee_number', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('middle_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->get();
+    }
+
+    public function userExistsForEmployee(Employee $employee): bool
+    {
+        if ($employee->user_id) {
+            return true;
+        }
+
+        if (! filled($employee->email) && ! filled($employee->employee_number)) {
+            return false;
+        }
+
+        return User::query()
+            ->where(function (Builder $query) use ($employee): void {
+                if (filled($employee->email)) {
+                    $query->orWhere('email', $employee->email);
+                }
+                if (filled($employee->employee_number)) {
+                    $query->orWhere('employee_number', $employee->employee_number);
+                }
+            })
+            ->exists();
+    }
+
+    public function linkEmployee(Employee $employee, User $user): void
+    {
+        $employee->forceFill(['user_id' => $user->id])->save();
     }
 
     /**

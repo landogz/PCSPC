@@ -3,6 +3,14 @@
 @section('title', 'Dashboard — '.config('app.name'))
 @section('page-title', 'Dashboard')
 
+@php
+    use App\Support\Navigation;
+    $can = static fn (string $key): bool => Navigation::userCanAccess(
+        auth()->user(),
+        Navigation::find($key) ?? [],
+    );
+@endphp
+
 @section('content')
 {{-- Welcome Hero + Quick Actions + Today's Summary --}}
 <section class="grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4">
@@ -24,42 +32,62 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5 mt-5">
-            <a href="{{ route('modules.show', ['module' => 'employees']) }}" class="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-strong transition-colors">
-                <i class="ph ph-users text-base"></i>Manage Team
-            </a>
-            <a href="{{ route('modules.show', ['module' => 'reports']) }}" class="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl border border-border bg-surface text-text text-sm font-medium hover:border-border-strong transition-colors">
-                <i class="ph ph-chart-bar text-base"></i>View Reports
-            </a>
+            @if ($can('employees'))
+                <a href="{{ route('modules.show', ['module' => 'employees']) }}" class="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-strong transition-colors">
+                    <i class="ph ph-users text-base"></i>Manage Team
+                </a>
+            @elseif ($can('leave'))
+                <a href="{{ route('modules.show', ['module' => 'leave']) }}" class="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-strong transition-colors">
+                    <i class="ph ph-calendar-x text-base"></i>File Leave
+                </a>
+            @endif
+            @if ($can('reports'))
+                <a href="{{ route('modules.show', ['module' => 'reports']) }}" class="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl border border-border bg-surface text-text text-sm font-medium hover:border-border-strong transition-colors">
+                    <i class="ph ph-chart-bar text-base"></i>View Reports
+                </a>
+            @elseif ($can('timekeeping'))
+                <a href="{{ route('modules.show', ['module' => 'timekeeping']) }}" class="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl border border-border bg-surface text-text text-sm font-medium hover:border-border-strong transition-colors">
+                    <i class="ph ph-clock-user text-base"></i>Timekeeping
+                </a>
+            @endif
         </div>
     </div>
 
     <div class="lg:col-span-6 2xl:col-span-4 bg-surface border border-border rounded-2xl p-5 md:p-6 flex flex-col">
         <h2 class="text-base font-semibold text-heading mb-4">Quick Actions</h2>
         <div class="grid sm:grid-cols-2 gap-3 flex-1">
-            <a href="{{ route('modules.show', ['module' => 'employees']) }}" class="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/40 hover:bg-primary-soft transition-colors group">
-                <span class="w-9 h-9 rounded-lg bg-primary-soft text-primary flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
-                    <i class="ph ph-user-plus text-lg"></i>
-                </span>
-                <span class="text-sm font-medium text-text group-hover:text-primary transition-colors">Employees</span>
-            </a>
-            <a href="{{ route('modules.show', ['module' => 'leave']) }}" class="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-[#e6347f]/40 hover:bg-[#e6347f]/8 transition-colors group">
-                <span class="w-9 h-9 rounded-lg bg-[#e6347f]/12 text-[#e6347f] flex items-center justify-center flex-shrink-0 group-hover:bg-[#e6347f] group-hover:text-white transition-colors">
-                    <i class="ph ph-calendar-x text-lg"></i>
-                </span>
-                <span class="text-sm font-medium text-text group-hover:text-[#e6347f] transition-colors">Leave Request</span>
-            </a>
-            <a href="{{ route('modules.show', ['module' => 'timekeeping']) }}" class="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-success/40 hover:bg-success-soft transition-colors group">
-                <span class="w-9 h-9 rounded-lg bg-success-soft text-success flex items-center justify-center flex-shrink-0 group-hover:bg-success group-hover:text-white transition-colors">
-                    <i class="ph ph-clock-user text-lg"></i>
-                </span>
-                <span class="text-sm font-medium text-text group-hover:text-success transition-colors">Timekeeping</span>
-            </a>
-            <a href="{{ route('modules.show', ['module' => 'medical']) }}" class="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-[#f59e0b]/40 hover:bg-[#f59e0b]/10 transition-colors group">
-                <span class="w-9 h-9 rounded-lg bg-[#f59e0b]/15 text-[#f59e0b] flex items-center justify-center flex-shrink-0 group-hover:bg-[#f59e0b] group-hover:text-white transition-colors">
-                    <i class="ph ph-heartbeat text-lg"></i>
-                </span>
-                <span class="text-sm font-medium text-text group-hover:text-[#f59e0b] transition-colors">Medical</span>
-            </a>
+            @if ($can('employees'))
+                <a href="{{ route('modules.show', ['module' => 'employees']) }}" class="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/40 hover:bg-primary-soft transition-colors group">
+                    <span class="w-9 h-9 rounded-lg bg-primary-soft text-primary flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+                        <i class="ph ph-user-plus text-lg"></i>
+                    </span>
+                    <span class="text-sm font-medium text-text group-hover:text-primary transition-colors">Employees</span>
+                </a>
+            @endif
+            @if ($can('leave'))
+                <a href="{{ route('modules.show', ['module' => 'leave']) }}" class="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-[#e6347f]/40 hover:bg-[#e6347f]/8 transition-colors group">
+                    <span class="w-9 h-9 rounded-lg bg-[#e6347f]/12 text-[#e6347f] flex items-center justify-center flex-shrink-0 group-hover:bg-[#e6347f] group-hover:text-white transition-colors">
+                        <i class="ph ph-calendar-x text-lg"></i>
+                    </span>
+                    <span class="text-sm font-medium text-text group-hover:text-[#e6347f] transition-colors">Leave Request</span>
+                </a>
+            @endif
+            @if ($can('timekeeping'))
+                <a href="{{ route('modules.show', ['module' => 'timekeeping']) }}" class="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-success/40 hover:bg-success-soft transition-colors group">
+                    <span class="w-9 h-9 rounded-lg bg-success-soft text-success flex items-center justify-center flex-shrink-0 group-hover:bg-success group-hover:text-white transition-colors">
+                        <i class="ph ph-clock-user text-lg"></i>
+                    </span>
+                    <span class="text-sm font-medium text-text group-hover:text-success transition-colors">Timekeeping</span>
+                </a>
+            @endif
+            @if ($can('medical'))
+                <a href="{{ route('modules.show', ['module' => 'medical']) }}" class="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-[#f59e0b]/40 hover:bg-[#f59e0b]/10 transition-colors group">
+                    <span class="w-9 h-9 rounded-lg bg-[#f59e0b]/15 text-[#f59e0b] flex items-center justify-center flex-shrink-0 group-hover:bg-[#f59e0b] group-hover:text-white transition-colors">
+                        <i class="ph ph-heartbeat text-lg"></i>
+                    </span>
+                    <span class="text-sm font-medium text-text group-hover:text-[#f59e0b] transition-colors">Medical</span>
+                </a>
+            @endif
         </div>
     </div>
 
@@ -134,10 +162,12 @@
                 <i class="ph ph-trend-up text-sm"></i>12.32%
             </span>
         </div>
-        <a href="{{ route('modules.show', ['module' => 'timekeeping']) }}" class="flex items-center justify-between text-sm text-muted hover:text-primary transition-colors pt-3 border-t border-border-subtle">
-            <span>View Details</span>
-            <i class="ph ph-arrow-square-out"></i>
-        </a>
+        @if ($can('timekeeping'))
+            <a href="{{ route('modules.show', ['module' => 'timekeeping']) }}" class="flex items-center justify-between text-sm text-muted hover:text-primary transition-colors pt-3 border-t border-border-subtle">
+                <span>View Details</span>
+                <i class="ph ph-arrow-square-out"></i>
+            </a>
+        @endif
     </article>
 
     <article class="bg-surface border border-border rounded-2xl p-4 md:p-5 flex flex-col gap-4">
@@ -155,10 +185,12 @@
                 <i class="ph ph-trend-up text-sm"></i>3.4%
             </span>
         </div>
-        <a href="{{ route('modules.show', ['module' => 'employees']) }}" class="flex items-center justify-between text-sm text-muted hover:text-primary transition-colors pt-3 border-t border-border-subtle">
-            <span>View Details</span>
-            <i class="ph ph-arrow-square-out"></i>
-        </a>
+        @if ($can('employees'))
+            <a href="{{ route('modules.show', ['module' => 'employees']) }}" class="flex items-center justify-between text-sm text-muted hover:text-primary transition-colors pt-3 border-t border-border-subtle">
+                <span>View Details</span>
+                <i class="ph ph-arrow-square-out"></i>
+            </a>
+        @endif
     </article>
 
     <article class="bg-surface border border-border rounded-2xl p-4 md:p-5 flex flex-col gap-4">
@@ -176,10 +208,12 @@
                 <i class="ph ph-trend-down text-sm"></i>1.2%
             </span>
         </div>
-        <a href="{{ route('modules.show', ['module' => 'leave']) }}" class="flex items-center justify-between text-sm text-muted hover:text-primary transition-colors pt-3 border-t border-border-subtle">
-            <span>View Details</span>
-            <i class="ph ph-arrow-square-out"></i>
-        </a>
+        @if ($can('leave'))
+            <a href="{{ route('modules.show', ['module' => 'leave']) }}" class="flex items-center justify-between text-sm text-muted hover:text-primary transition-colors pt-3 border-t border-border-subtle">
+                <span>View Details</span>
+                <i class="ph ph-arrow-square-out"></i>
+            </a>
+        @endif
     </article>
 
     <article class="bg-surface border border-border rounded-2xl p-4 md:p-5 flex flex-col gap-4">
@@ -197,10 +231,12 @@
                 <i class="ph ph-trend-up text-sm"></i>0.8%
             </span>
         </div>
-        <a href="{{ route('modules.show', ['module' => 'departments']) }}" class="flex items-center justify-between text-sm text-muted hover:text-primary transition-colors pt-3 border-t border-border-subtle">
-            <span>View Details</span>
-            <i class="ph ph-arrow-square-out"></i>
-        </a>
+        @if ($can('departments'))
+            <a href="{{ route('modules.show', ['module' => 'departments']) }}" class="flex items-center justify-between text-sm text-muted hover:text-primary transition-colors pt-3 border-t border-border-subtle">
+                <span>View Details</span>
+                <i class="ph ph-arrow-square-out"></i>
+            </a>
+        @endif
     </article>
 </section>
 

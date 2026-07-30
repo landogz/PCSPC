@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -20,11 +21,13 @@ use Laravel\Sanctum\HasApiTokens;
     'employee_number',
     'password',
     'is_active',
+    'is_protected',
     'mfa_enabled',
     'mfa_secret',
     'failed_login_attempts',
     'locked_until',
     'password_changed_at',
+    'must_change_password',
     'last_login_at',
     'last_login_ip',
 ])]
@@ -49,7 +52,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'is_protected' => 'boolean',
             'mfa_enabled' => 'boolean',
+            'must_change_password' => 'boolean',
             'mfa_secret' => 'encrypted',
             'locked_until' => 'datetime',
             'password_changed_at' => 'datetime',
@@ -72,9 +77,24 @@ class User extends Authenticatable
         return $this->hasMany(AuthActivityLog::class);
     }
 
+    public function passwordHistories(): HasMany
+    {
+        return $this->hasMany(PasswordHistory::class);
+    }
+
+    public function employee(): HasOne
+    {
+        return $this->hasOne(Employee::class);
+    }
+
     public function isLocked(): bool
     {
         return $this->locked_until !== null && $this->locked_until->isFuture();
+    }
+
+    public function isProtected(): bool
+    {
+        return (bool) $this->is_protected;
     }
 
     public function requiresMfa(): bool

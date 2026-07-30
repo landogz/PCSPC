@@ -1,15 +1,17 @@
 <?php
 
-namespace App\Services\Administration;
+namespace App\Services\Departments;
 
 use App\Models\Department;
-use App\Repositories\Administration\DepartmentRepository;
+use App\Repositories\Departments\DepartmentRepository;
+use App\Services\Audit\AuditLogger;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class DepartmentService
 {
     public function __construct(
         private readonly DepartmentRepository $departments,
+        private readonly AuditLogger $audit,
     ) {}
 
     /**
@@ -36,12 +38,20 @@ class DepartmentService
      */
     public function create(array $payload): Department
     {
-        return $this->departments->create([
+        $department = $this->departments->create([
             'code' => strtoupper(trim($payload['code'])),
             'name' => $payload['name'],
             'description' => $payload['description'] ?? null,
             'is_active' => (bool) ($payload['is_active'] ?? true),
         ]);
+
+        $this->audit->log('department.created', [
+            'department_id' => $department->uuid,
+            'code' => $department->code,
+            'name' => $department->name,
+        ]);
+
+        return $department;
     }
 
     /**
@@ -51,16 +61,34 @@ class DepartmentService
     {
         $department = $this->find($uuid);
 
-        return $this->departments->update($department, [
+        $updated = $this->departments->update($department, [
             'code' => strtoupper(trim($payload['code'])),
             'name' => $payload['name'],
             'description' => $payload['description'] ?? null,
             'is_active' => (bool) ($payload['is_active'] ?? $department->is_active),
         ]);
+
+        $this->audit->log('department.updated', [
+            'department_id' => $updated->uuid,
+            'code' => $updated->code,
+            'name' => $updated->name,
+            'is_active' => (bool) $updated->is_active,
+        ]);
+
+        return $updated;
     }
 
     public function delete(string $uuid): void
     {
-        $this->departments->delete($this->find($uuid));
+        $department = $this->find($uuid);
+        $meta = [
+            'department_id' => $department->uuid,
+            'code' => $department->code,
+            'name' => $department->name,
+        ];
+
+        $this->departments->delete($department);
+
+        $this->audit->log('department.deleted', $meta);
     }
 }

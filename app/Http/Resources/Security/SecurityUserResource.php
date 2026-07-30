@@ -26,6 +26,8 @@ class SecurityUserResource extends JsonResource
             'email' => $this->email,
             'employee_number' => $this->employee_number,
             'is_active' => (bool) $this->is_active,
+            'is_protected' => $this->isProtected(),
+            'can_delete' => ! $this->isProtected(),
             'mfa_enabled' => (bool) $this->mfa_enabled,
             'is_locked' => $this->isLocked(),
             'failed_login_attempts' => (int) $this->failed_login_attempts,

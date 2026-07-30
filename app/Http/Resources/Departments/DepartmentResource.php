@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\Administration;
+namespace App\Http\Resources\Departments;
 
 use App\Models\Department;
 use Illuminate\Http\Request;

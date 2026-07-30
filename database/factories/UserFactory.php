@@ -30,6 +30,7 @@ class UserFactory extends Factory
             'mfa_enabled' => false,
             'failed_login_attempts' => 0,
             'password_changed_at' => now(),
+            'must_change_password' => false,
             'remember_token' => Str::random(10),
         ];
     }
@@ -59,6 +60,21 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'mfa_enabled' => true,
+        ]);
+    }
+
+    public function mustChangePassword(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'must_change_password' => true,
+        ]);
+    }
+
+    public function passwordExpired(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'password_changed_at' => now()->subDays(120),
+            'must_change_password' => false,
         ]);
     }
 }

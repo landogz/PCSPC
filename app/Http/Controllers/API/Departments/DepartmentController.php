@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\API\Administration;
+namespace App\Http\Controllers\API\Departments;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Administration\StoreDepartmentRequest;
-use App\Http\Requests\Administration\UpdateDepartmentRequest;
-use App\Http\Resources\Administration\DepartmentResource;
-use App\Services\Administration\DepartmentService;
+use App\Http\Requests\Departments\StoreDepartmentRequest;
+use App\Http\Requests\Departments\UpdateDepartmentRequest;
+use App\Http\Resources\Departments\DepartmentResource;
+use App\Services\Departments\DepartmentService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

@@ -26,18 +26,12 @@ class UpdateUserRequest extends FormRequest
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')->where(fn ($q) => $q->where('uuid', '!=', $uuid)),
-            ],
-            'employee_number' => [
-                'nullable',
-                'string',
-                'max:50',
-                Rule::unique('users', 'employee_number')->where(fn ($q) => $q->where('uuid', '!=', $uuid)),
+                Rule::unique('users', 'email')->ignore($uuid, 'uuid'),
             ],
             'password' => ['nullable', 'string', Password::defaults()],
             'is_active' => ['sometimes', 'boolean'],
             'mfa_enabled' => ['sometimes', 'boolean'],
-            'role_ids' => ['sometimes', 'array'],
+            'role_ids' => ['required', 'array', 'size:1'],
             'role_ids.*' => ['uuid', Rule::exists('roles', 'uuid')],
         ];
     }

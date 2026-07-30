@@ -52,4 +52,12 @@ routes under /api/v1/{key}
 
 ## Status
 
-Menus and web routes are connected. Module pages are scaffolds until the mapped delivery phase implements full SPA/API behavior.
+| Area | Status |
+|------|--------|
+| Menus & web routes | ✅ Connected via `config/navigation.php` + RBAC filter |
+| Auth / Security / Audit | ✅ SPA + `/api/v1` |
+| Departments | ✅ SPA + `/api/v1/departments` |
+| Employees 201 | ✅ SPA + `/api/v1/employees` (v1 fields; dependents/history/Excel later) |
+| Other module pages | ⬜ Scaffolds until mapped delivery phase |
+
+Legend: ✅ done · 🔶 partial · ⬜ not started — see [`PROJECT_PLAN.md`](PROJECT_PLAN.md) progress section.

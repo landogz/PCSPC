@@ -1,3 +1,5 @@
+import { initPasswordToggles } from '../utils/password-toggle';
+
 const SIDEBAR_STATE_KEY = 'hr-sidebar';
 const DESKTOP_BREAKPOINT = 992;
 
@@ -204,21 +206,7 @@ function initThemeToggle() {
 }
 
 function initPasswordToggle() {
-    document.getElementById('password-toggle')?.addEventListener('click', (event) => {
-        const button = event.currentTarget;
-        const input = document.getElementById('password');
-        const icon = button.querySelector('i');
-
-        if (!input || !icon) {
-            return;
-        }
-
-        const show = input.type === 'password';
-        input.type = show ? 'text' : 'password';
-        button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
-        button.setAttribute('aria-pressed', show ? 'true' : 'false');
-        icon.className = show ? 'ph ph-eye-slash text-lg' : 'ph ph-eye text-lg';
-    });
+    initPasswordToggles(document);
 }
 
 export function initLayoutModule() {

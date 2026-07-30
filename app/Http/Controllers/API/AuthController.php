@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\VerifyMfaRequest;
 use App\Http\Resources\UserResource;
+use App\Services\Administration\PasswordPolicyService;
 use App\Services\AuthService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -15,6 +17,7 @@ class AuthController extends Controller
 {
     public function __construct(
         private readonly AuthService $authService,
+        private readonly PasswordPolicyService $passwordPolicy,
     ) {}
 
     public function login(LoginRequest $request): JsonResponse
@@ -52,6 +55,44 @@ class AuthController extends Controller
 
         return ApiResponse::success('Authenticated user retrieved.', [
             'user' => (new UserResource($user))->resolve(),
+            ...$this->passwordPolicy->statusFor($user),
+        ]);
+    }
+
+    public function passwordPolicy(): JsonResponse
+    {
+        $policy = $this->passwordPolicy->current();
+
+        return ApiResponse::success('Password policy retrieved.', [
+            'policy' => [
+                'min_length' => $policy['min_length'],
+                'require_mixed_case' => $policy['require_mixed_case'],
+                'require_numbers' => $policy['require_numbers'],
+                'require_symbols' => $policy['require_symbols'],
+                'history_count' => $policy['history_count'],
+                'expire_days' => $policy['expire_days'],
+                'hint' => $policy['hint'],
+            ],
+        ]);
+    }
+
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user === null) {
+            return ApiResponse::error('Unauthenticated.', [], 401);
+        }
+
+        $updated = $this->authService->changePassword(
+            user: $user,
+            currentPassword: (string) $request->validated('current_password'),
+            newPassword: (string) $request->validated('password'),
+        );
+
+        return ApiResponse::success('Password updated successfully.', [
+            'user' => (new UserResource($updated->loadMissing('roles.permissions')))->resolve(),
+            ...$this->passwordPolicy->statusFor($updated),
         ]);
     }
 

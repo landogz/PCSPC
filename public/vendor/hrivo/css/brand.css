@@ -57,6 +57,28 @@
     padding-top: 5rem;
 }
 
+/* Modal dim overlay — required behind every dialog panel */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgb(0 0 0 / 0.5);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+}
+
+/* Modal card: cap height so sticky footer stays inside the panel */
+.modal-panel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-height: min(92vh, calc(100dvh - 1.5rem));
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+    box-shadow: 0 20px 40px rgb(0 0 0 / 0.18);
+}
+
 /* Docs prose + Mermaid */
 .docs-prose {
     color: var(--color-text-secondary);

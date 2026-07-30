@@ -11,6 +11,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Password policy (ADM-005)
+    | DB overrides (Administration) win over these defaults when present.
+    |--------------------------------------------------------------------------
+    */
+    'password' => [
+        'min_length' => (int) env('AUTH_PASSWORD_MIN_LENGTH', 8),
+        'require_mixed_case' => filter_var(env('AUTH_PASSWORD_MIXED_CASE', true), FILTER_VALIDATE_BOOL),
+        'require_numbers' => filter_var(env('AUTH_PASSWORD_NUMBERS', true), FILTER_VALIDATE_BOOL),
+        'require_symbols' => filter_var(env('AUTH_PASSWORD_SYMBOLS', true), FILTER_VALIDATE_BOOL),
+        'uncompromised' => filter_var(env('AUTH_PASSWORD_UNCOMPROMISED', false), FILTER_VALIDATE_BOOL),
+        'expire_days' => (int) env('AUTH_PASSWORD_EXPIRE_DAYS', 90),
+        'history_count' => (int) env('AUTH_PASSWORD_HISTORY_COUNT', 5),
+        'force_change_temporary' => filter_var(env('AUTH_PASSWORD_FORCE_TEMP', true), FILTER_VALIDATE_BOOL),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | MFA challenge
     |--------------------------------------------------------------------------
     */

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsurePasswordIsCurrent;
 use App\Http\Middleware\EnsurePermission;
 use App\Support\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'permission' => EnsurePermission::class,
+            'password.current' => EnsurePasswordIsCurrent::class,
         ]);
 
         $middleware->redirectGuestsTo(fn () => route('login'));

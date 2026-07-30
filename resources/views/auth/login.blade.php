@@ -50,26 +50,13 @@
                                 Password
                             </label>
                         </div>
-                        <div class="relative">
-                            <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                autocomplete="current-password"
-                                required
-                                placeholder="Enter your password"
-                                class="w-full h-11 pl-3 pr-10 rounded-xl bg-subtle border border-border text-sm text-text placeholder:text-faint focus:outline-none focus:border-primary transition-colors"
-                            >
-                            <button
-                                type="button"
-                                id="password-toggle"
-                                aria-label="Show password"
-                                aria-pressed="false"
-                                class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-heading hover:bg-subtle transition-colors"
-                            >
-                                <i class="ph ph-eye text-lg"></i>
-                            </button>
-                        </div>
+                        <x-ui.password-input
+                            name="password"
+                            id="password"
+                            autocomplete="current-password"
+                            :required="true"
+                            placeholder="Enter your password"
+                        />
                         <p data-error="password" class="mt-1.5 text-sm text-danger hidden"></p>
                     </div>
 

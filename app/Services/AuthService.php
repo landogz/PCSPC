@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\AuthEvent;
 use App\Models\User;
 use App\Repositories\AuthRepository;
+use App\Services\Administration\PasswordPolicyService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
@@ -17,6 +18,7 @@ class AuthService
 {
     public function __construct(
         private readonly AuthRepository $authRepository,
+        private readonly PasswordPolicyService $passwordPolicy,
     ) {}
 
     /**
@@ -229,6 +231,11 @@ class AuthService
         return $revoked;
     }
 
+    public function changePassword(User $user, string $currentPassword, string $newPassword): User
+    {
+        return $this->passwordPolicy->changeOwnPassword($user, $currentPassword, $newPassword);
+    }
+
     /**
      * @return array{status: string, message: string, data: array<string, mixed>, http: int}
      */
@@ -309,23 +316,37 @@ class AuthService
 
         $user->load('roles.permissions');
 
+        $passwordStatus = $this->passwordPolicy->statusFor($user);
+
+        if ($passwordStatus['password_expired'] && ! $user->must_change_password) {
+            $user->forceFill(['must_change_password' => true])->save();
+            $user = $user->fresh(['roles.permissions']) ?? $user;
+            $passwordStatus = $this->passwordPolicy->statusFor($user);
+        }
+
         $this->authRepository->logActivity(
             AuthEvent::LoginSuccess,
             $user,
             $user->email,
             $ip,
             $userAgent,
-            ['client' => filled($deviceName) ? 'token' : 'spa'],
+            [
+                'client' => filled($deviceName) ? 'token' : 'spa',
+                'password_change_required' => $passwordStatus['password_change_required'],
+                'password_change_reason' => $passwordStatus['password_change_reason'],
+            ],
         );
 
         return [
             'status' => 'authenticated',
-            'message' => 'Login successful.',
+            'message' => $passwordStatus['password_change_required']
+                ? 'Login successful. Password change required.'
+                : 'Login successful.',
             'http' => 200,
-            'data' => [
+            'data' => array_merge([
                 'mfa_required' => false,
                 'token' => $token,
-                'user' => [
+                'user' => array_merge([
                     'id' => $user->uuid,
                     'name' => $user->name,
                     'email' => $user->email,
@@ -335,8 +356,8 @@ class AuthService
                     'roles' => $user->roleSlugs(),
                     'permissions' => $user->permissionSlugs(),
                     'last_login_at' => $user->last_login_at?->toIso8601String(),
-                ],
-            ],
+                ], $passwordStatus),
+            ], $passwordStatus),
         ];
     }
 
