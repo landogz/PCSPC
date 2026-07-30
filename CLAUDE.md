@@ -133,6 +133,8 @@ tested and how, rather than silently skipping QA.
 
 - Small, atomic commits with clear messages using **Conventional Commits** style: `feat:`, `fix:`, `refactor:`, `chore:`, `test:`, `docs:`, `security:`.
 - Never commit `.env`, credentials, `vendor/`, `node_modules/`, or build artifacts.
+- Never commit or push Cursor IDE files: `.cursor/`, `.cursorrules`, or Cursor rules/config.
+- Never include Cursor attribution on commits/PRs (`Co-authored-by: Cursor <cursoragent@cursor.com>`, `Made with Cursor`, author `cursoragent`). Push as the developer’s own git identity only.
 - New features/fixes go through a branch (`feature/...`, `fix/...`) — avoid direct commits to `main`/`production` in described workflows.
 - Write commit messages and PR descriptions that explain **why**, not just what.
 

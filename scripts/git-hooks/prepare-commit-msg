@@ -1,0 +1,21 @@
+#!/bin/sh
+# Strip Cursor attribution trailers from commit messages (local safety net).
+# Install: cp scripts/git-hooks/prepare-commit-msg .git/hooks/prepare-commit-msg && chmod +x .git/hooks/prepare-commit-msg
+MSG_FILE="$1"
+[ -f "$MSG_FILE" ] || exit 0
+
+TMP_FILE="${MSG_FILE}.cursor-strip"
+grep -v -E \
+  -e '^Co-authored-by:[[:space:]]*Cursor[[:space:]]*<cursoragent@cursor\.com>[[:space:]]*$' \
+  -e '^Made-with:[[:space:]]*Cursor[[:space:]]*$' \
+  -e '^Made with Cursor[[:space:]]*$' \
+  -e '^Made with \[Cursor\]' \
+  "$MSG_FILE" > "$TMP_FILE" || true
+
+awk '
+  NF { blank=0; print; next }
+  { blank++ }
+  blank <= 1 { print }
+' "$TMP_FILE" > "$MSG_FILE"
+rm -f "$TMP_FILE"
+exit 0
