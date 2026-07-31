@@ -17,7 +17,7 @@
     </script>
     <link rel="stylesheet" href="{{ asset('vendor/hrivo/css/index.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/hrivo/css/brand.css') }}">
-    @vite(['resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-bg text-text font-sans antialiased relative" data-page-title="{{ html_entity_decode(trim($__env->yieldContent('page-title', 'Dashboard')), ENT_QUOTES, 'UTF-8') }}">
     <x-layout.sidebar />

@@ -25,7 +25,7 @@ Interactive views:
 |-------|--------|-------------|
 | **P0** Procurement | 🔶 | Bid materials in `docs/hris-bidding/`; pre-bid still upcoming |
 | **P1** Discovery & Design | ⬜ | Workshops / SDD / ERD not started |
-| **P2** Platform Foundation | ✅ / 🔶 | **Done:** SPA shell, Sanctum auth, MFA, RBAC, Users & Security, Roles, Audit Log + domain AuditLogger, **ADM-005 password policy** (complexity, expiration, history, force-change, Administration UI), ApiResponse, FormRequests, nav RBAC, toasts, feature tests. **Open:** PostgreSQL switch, full CI/CD, three envs on GCP; wire audit on every new module thereafter |
+| **P2** Platform Foundation | ✅ / 🔶 | **Done:** SPA shell, Sanctum auth, MFA, RBAC, Users & Security, Roles, Audit Log + domain AuditLogger, **ADM-005 password policy**, **Dashboard live stats** (employees / on leave / departments via `/api/v1/dashboard/stats`), ApiResponse, FormRequests, nav RBAC, toasts, feature tests. **Open:** PostgreSQL switch, full CI/CD, three envs on GCP; attendance widgets pending timekeeping |
 | **P3** Employee 201 + Admin | 🔶 | **Done:** Employees 201 CRUD (employment/personal/statutory), User↔Employee link + Employee role, Departments, protected platform super-admin, employee # owned by Employees (Security Add User picks from 201). **Open:** dependents/history, holidays/shifts, DOC-001, Excel export |
 | **P4–P10** | ⬜ | Not started |
 
@@ -198,6 +198,7 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 - ✅ Navigation filtered by RBAC; module pages 403 without permission
 - ✅ Dark mode, shared modal shell (sticky footer), toast success/error + Swal confirms
 - ✅ Password policy Administration UI (`/modules/administration`) + forced change at `/account/password`
+- ✅ Dashboard live KPIs (`GET /api/v1/dashboard/stats`) — employees headcount, on leave, active departments; attendance/check-ins pending timekeeping
 
 **Exit (local):** Deployable shell with auth, user/role admin, audit; secrets not in repo.  
 **Exit (contract):** still needs Staging/Live + PostgreSQL + full CI/CD.
@@ -209,7 +210,7 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 - ✅ Employee master v1 (employment + personal + **encrypted** statutory fields)
 - ✅ Create/update provisions or links a User and assigns **Employee** role; temp password on new login
 - ✅ Deactivate employee syncs linked `user.is_active = false`
-- ✅ Employees SPA (`/modules/employees`) — filters, context menu, sectioned modal
+- ✅ Employees SPA (`/modules/employees`) — filters, context menu, Actions column, sectioned tabbed modal (Employment / Personal / Contact / Documents) with post-submit validation UX (human error copy, tab error badges, informational account callout)
 - ✅ Employee profile photo (upload/remove on 201) → wired to linked User `avatar_url`; shown in Employees table, Security users/search, sidebar & topbar
 - ✅ Departments (`/modules/departments`) — org units CRUD
 - ⬜ Dependents, education, employment history, training, medical stubs

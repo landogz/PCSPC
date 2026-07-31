@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\Administration\PasswordPolicyController;
 use App\Http\Controllers\API\Audit\AuditLogController;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\Dashboard\DashboardController;
 use App\Http\Controllers\API\Departments\DepartmentController;
 use App\Http\Controllers\API\Employees\EmployeeController;
 use App\Http\Controllers\API\Security\RoleController as SecurityRoleController;
@@ -62,6 +63,10 @@ Route::prefix('api/v1/auth')->group(function (): void {
 });
 
 Route::prefix('api/v1')->middleware(['auth:sanctum', 'password.current'])->group(function (): void {
+    Route::middleware('permission:dashboard.view')->prefix('dashboard')->group(function (): void {
+        Route::get('/stats', [DashboardController::class, 'stats']);
+    });
+
     Route::middleware('permission:administration.manage')->prefix('administration')->group(function (): void {
         Route::get('/password-policy', [PasswordPolicyController::class, 'show']);
         Route::put('/password-policy', [PasswordPolicyController::class, 'update']);

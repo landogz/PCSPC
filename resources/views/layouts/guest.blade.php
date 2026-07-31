@@ -9,7 +9,7 @@
     <x-layout.theme-boot />
     <link rel="stylesheet" href="{{ asset('vendor/hrivo/css/index.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/hrivo/css/brand.css') }}">
-    @vite(['resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-bg text-text font-sans antialiased" data-page-title="@yield('page-title', 'Sign In')">
     @yield('content')

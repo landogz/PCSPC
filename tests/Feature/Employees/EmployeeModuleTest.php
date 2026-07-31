@@ -21,6 +21,19 @@ class EmployeeModuleTest extends TestCase
         $this->seed(AuthSeeder::class);
     }
 
+    public function test_create_validation_uses_human_error_copy(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->postJson('/api/v1/employees', [])
+            ->assertStatus(422)
+            ->assertJsonPath('errors.first_name.0', 'Please enter a first name.')
+            ->assertJsonPath('errors.last_name.0', 'Please enter a last name.')
+            ->assertJsonPath('errors.employee_number.0', 'Please enter an employee number.')
+            ->assertJsonPath('errors.email.0', 'Please enter a login email.');
+    }
+
     public function test_admin_can_list_employees(): void
     {
         $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();

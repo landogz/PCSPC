@@ -12,6 +12,7 @@
 @endphp
 
 @section('content')
+<div data-module="dashboard" class="space-y-3 md:space-y-4">
 {{-- Welcome Hero + Quick Actions + Today's Summary --}}
 <section class="grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4">
     <div class="lg:col-span-6 2xl:col-span-5 relative overflow-hidden rounded-2xl bg-primary/10 p-5 md:p-6 flex flex-col justify-between min-h-[180px]">
@@ -104,10 +105,10 @@
                         <span class="w-2 h-2 rounded-full bg-success flex-shrink-0"></span>
                         <span class="text-sm text-text">Check-ins</span>
                     </div>
-                    <span class="text-sm font-semibold text-heading">312 / 348</span>
+                    <span class="text-sm font-semibold text-heading" data-stat="summary-check-ins">—</span>
                 </div>
                 <div class="h-1.5 rounded-full bg-subtle overflow-hidden">
-                    <div class="h-full rounded-full bg-success" style="width: 89.7%"></div>
+                    <div class="h-full rounded-full bg-success" data-stat-bar="check-ins" style="width: 0%"></div>
                 </div>
             </div>
 
@@ -117,10 +118,10 @@
                         <span class="w-2 h-2 rounded-full bg-warning flex-shrink-0"></span>
                         <span class="text-sm text-text">On Leave</span>
                     </div>
-                    <span class="text-sm font-semibold text-heading">24</span>
+                    <span class="text-sm font-semibold text-heading" data-stat="summary-on-leave">—</span>
                 </div>
                 <div class="h-1.5 rounded-full bg-subtle overflow-hidden">
-                    <div class="h-full rounded-full bg-warning" style="width: 35%"></div>
+                    <div class="h-full rounded-full bg-warning" data-stat-bar="on-leave" style="width: 0%"></div>
                 </div>
             </div>
 
@@ -130,10 +131,10 @@
                         <span class="w-2 h-2 rounded-full bg-danger flex-shrink-0"></span>
                         <span class="text-sm text-text">Late Arrivals</span>
                     </div>
-                    <span class="text-sm font-semibold text-heading">12</span>
+                    <span class="text-sm font-semibold text-heading" data-stat="summary-late">—</span>
                 </div>
                 <div class="h-1.5 rounded-full bg-subtle overflow-hidden">
-                    <div class="h-full rounded-full bg-danger" style="width: 18%"></div>
+                    <div class="h-full rounded-full bg-danger" data-stat-bar="late" style="width: 0%"></div>
                 </div>
             </div>
 
@@ -154,13 +155,11 @@
                     <i class="ph ph-fingerprint text-2xl"></i>
                 </span>
                 <div class="min-w-0">
-                    <p class="text-2xl font-bold text-heading leading-none">324</p>
+                    <p class="text-2xl font-bold text-heading leading-none" data-stat="attendance">—</p>
                     <p class="text-sm text-muted mt-1 text-nowrap">Attendance</p>
                 </div>
             </div>
-            <span class="inline-flex items-center gap-0.5 text-xs font-semibold text-success flex-shrink-0">
-                <i class="ph ph-trend-up text-sm"></i>12.32%
-            </span>
+            <span class="inline-flex items-center gap-0.5 text-xs font-semibold text-muted flex-shrink-0" title="Available when timekeeping is live">Soon</span>
         </div>
         @if ($can('timekeeping'))
             <a href="{{ route('modules.show', ['module' => 'timekeeping']) }}" class="flex items-center justify-between text-sm text-muted hover:text-primary transition-colors pt-3 border-t border-border-subtle">
@@ -177,13 +176,11 @@
                     <i class="ph ph-users-three text-2xl"></i>
                 </span>
                 <div class="min-w-0">
-                    <p class="text-2xl font-bold text-heading leading-none">1,248</p>
+                    <p class="text-2xl font-bold text-heading leading-none" data-stat="employees">—</p>
                     <p class="text-sm text-muted mt-1 text-nowrap">Employees</p>
                 </div>
             </div>
-            <span class="inline-flex items-center gap-0.5 text-xs font-semibold text-success flex-shrink-0">
-                <i class="ph ph-trend-up text-sm"></i>3.4%
-            </span>
+            <span class="hidden inline-flex items-center gap-0.5 text-xs font-semibold flex-shrink-0" data-stat-delta="employees"></span>
         </div>
         @if ($can('employees'))
             <a href="{{ route('modules.show', ['module' => 'employees']) }}" class="flex items-center justify-between text-sm text-muted hover:text-primary transition-colors pt-3 border-t border-border-subtle">
@@ -200,16 +197,19 @@
                     <i class="ph ph-airplane-takeoff text-2xl"></i>
                 </span>
                 <div class="min-w-0">
-                    <p class="text-2xl font-bold text-heading leading-none">24</p>
+                    <p class="text-2xl font-bold text-heading leading-none" data-stat="on-leave">—</p>
                     <p class="text-sm text-muted mt-1 text-nowrap">On Leave</p>
                 </div>
             </div>
-            <span class="inline-flex items-center gap-0.5 text-xs font-semibold text-danger flex-shrink-0">
-                <i class="ph ph-trend-down text-sm"></i>1.2%
-            </span>
+            <span class="hidden inline-flex items-center gap-0.5 text-xs font-semibold flex-shrink-0" data-stat-delta="on-leave"></span>
         </div>
         @if ($can('leave'))
             <a href="{{ route('modules.show', ['module' => 'leave']) }}" class="flex items-center justify-between text-sm text-muted hover:text-primary transition-colors pt-3 border-t border-border-subtle">
+                <span>View Details</span>
+                <i class="ph ph-arrow-square-out"></i>
+            </a>
+        @elseif ($can('employees'))
+            <a href="{{ route('modules.show', ['module' => 'employees']) }}?status=on_leave" class="flex items-center justify-between text-sm text-muted hover:text-primary transition-colors pt-3 border-t border-border-subtle">
                 <span>View Details</span>
                 <i class="ph ph-arrow-square-out"></i>
             </a>
@@ -223,13 +223,11 @@
                     <i class="ph ph-buildings text-2xl"></i>
                 </span>
                 <div class="min-w-0">
-                    <p class="text-2xl font-bold text-heading leading-none">18</p>
+                    <p class="text-2xl font-bold text-heading leading-none" data-stat="departments">—</p>
                     <p class="text-sm text-muted mt-1 text-nowrap">Departments</p>
                 </div>
             </div>
-            <span class="inline-flex items-center gap-0.5 text-xs font-semibold text-success flex-shrink-0">
-                <i class="ph ph-trend-up text-sm"></i>0.8%
-            </span>
+            <span class="hidden inline-flex items-center gap-0.5 text-xs font-semibold flex-shrink-0" data-stat-delta="departments"></span>
         </div>
         @if ($can('departments'))
             <a href="{{ route('modules.show', ['module' => 'departments']) }}" class="flex items-center justify-between text-sm text-muted hover:text-primary transition-colors pt-3 border-t border-border-subtle">
@@ -257,4 +255,5 @@
         </button>
     </div>
 </section>
+</div>
 @endsection

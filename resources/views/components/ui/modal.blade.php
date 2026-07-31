@@ -1,6 +1,7 @@
 @props([
     'id',
     'title' => null,
+    'subtitle' => null,
     'maxWidth' => 'max-w-lg',
 ])
 
@@ -23,13 +24,21 @@
     <div class="relative z-10 flex h-full min-h-0 items-end justify-center p-3 sm:items-center sm:p-4">
         <div class="modal-panel {{ $maxWidth }}">
             @if ($title || isset($header))
-                <div class="flex flex-shrink-0 items-center justify-between gap-3 border-b border-border p-4 sm:p-5">
+                <div class="relative flex flex-shrink-0 items-start justify-between gap-3 border-b border-border p-4 sm:p-5">
+                    <div class="absolute inset-x-0 top-0 h-1 rounded-t-2xl bg-primary" aria-hidden="true"></div>
                     @isset($header)
                         {{ $header }}
                     @else
-                        <h3 id="{{ $id }}-title" class="text-lg font-semibold text-heading" data-modal-title>{{ $title }}</h3>
+                        <div class="min-w-0 pr-2 pt-1">
+                            <div class="min-w-0">
+                                <h3 id="{{ $id }}-title" class="text-lg font-semibold text-heading" data-modal-title>{{ $title }}</h3>
+                                @if ($subtitle)
+                                    <p class="text-sm text-muted mt-0.5" data-modal-subtitle>{{ $subtitle }}</p>
+                                @endif
+                            </div>
+                        </div>
                     @endisset
-                    <button type="button" class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg hover:bg-subtle" data-modal-dismiss aria-label="Close">
+                    <button type="button" class="mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg hover:bg-subtle" data-modal-dismiss aria-label="Close">
                         <i class="ph ph-x text-lg"></i>
                     </button>
                 </div>

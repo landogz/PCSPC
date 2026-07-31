@@ -39,16 +39,51 @@ function clearErrors(form) {
         el.textContent = '';
         el.classList.add('hidden');
     });
+    form.querySelectorAll('.ui-input.is-invalid, .ui-select.is-invalid').forEach((el) => {
+        el.classList.remove('is-invalid');
+        el.removeAttribute('aria-invalid');
+    });
+    form.querySelectorAll('[data-tab-error]').forEach((el) => {
+        el.classList.add('hidden');
+    });
 }
 
 function showErrors(form, errors = {}) {
     Object.entries(errors).forEach(([field, messages]) => {
         const el = form.querySelector(`[data-error="${field}"]`);
-        if (!el) {
+        if (el) {
+            el.textContent = Array.isArray(messages) ? messages[0] : String(messages);
+            el.classList.remove('hidden');
+        }
+        const input = form.elements.namedItem(field);
+        if (input && 'classList' in input) {
+            input.classList.add('is-invalid');
+            input.setAttribute('aria-invalid', 'true');
+        }
+    });
+}
+
+function updateTabErrorBadges(form, tabKeys, tabFields) {
+    tabKeys.forEach((key) => {
+        const badge = form.querySelector(`[data-tab-error="${key}"]`);
+        if (!badge) {
             return;
         }
-        el.textContent = Array.isArray(messages) ? messages[0] : String(messages);
-        el.classList.remove('hidden');
+        let hasError = tabFields[key].some((field) => {
+            const input = form.elements.namedItem(field);
+            return Boolean(input && 'classList' in input && input.classList.contains('is-invalid'));
+        });
+
+        if (!hasError && key === 'employment') {
+            const photoErr = form.querySelector('[data-error="photo"]');
+            hasError = Boolean(
+                photoErr
+                && !photoErr.classList.contains('hidden')
+                && photoErr.textContent.trim() !== '',
+            );
+        }
+
+        badge.classList.toggle('hidden', !hasError);
     });
 }
 
@@ -276,14 +311,120 @@ export function initEmployeesModule() {
             img.src = url;
             img.classList.remove('hidden');
             initial.classList.add('hidden');
-            preview.classList.remove('bg-primary', 'text-white');
+            preview.classList.remove('bg-primary', 'text-white', 'border-dashed', 'border-primary/40');
+            preview.classList.add('border-solid', 'border-border');
             return;
         }
 
         img.removeAttribute('src');
         img.classList.add('hidden');
         initial.classList.remove('hidden');
-        preview.classList.add('bg-primary', 'text-white');
+        preview.classList.add('bg-primary', 'text-white', 'border-dashed', 'border-primary/40');
+        preview.classList.remove('border-solid', 'border-border');
+    }
+
+    const subtitle = modal.querySelector('[data-modal-subtitle]');
+    const progressEl = form.querySelector('[data-form-progress]');
+    const TAB_KEYS = ['employment', 'personal', 'contact', 'documents'];
+    const TAB_FIELDS = {
+        employment: ['first_name', 'middle_name', 'last_name', 'suffix', 'employee_number', 'department_id', 'position_title', 'employment_status', 'date_hired', 'date_regularized', 'date_separated'],
+        personal: ['birth_date', 'gender', 'civil_status', 'nationality'],
+        contact: ['email', 'mobile', 'address_line', 'city', 'province', 'zip_code'],
+        documents: ['tin', 'sss_number', 'philhealth_number', 'pagibig_number'],
+    };
+    let activeTabKey = 'employment';
+
+    function setActiveTab(tabKey) {
+        activeTabKey = tabKey;
+        TAB_KEYS.forEach((key) => {
+            const tab = form.querySelector(`[data-tab="${key}"]`);
+            const panel = form.querySelector(`[data-tab-panel="${key}"]`);
+            const active = key === tabKey;
+            tab?.classList.toggle('is-active', active);
+            tab?.setAttribute('aria-selected', active ? 'true' : 'false');
+            panel?.classList.toggle('hidden', !active);
+        });
+        updateProgress();
+    }
+
+    function sectionStarted(fields) {
+        return fields.some((key) => {
+            const field = form.elements.namedItem(key);
+            if (!field) {
+                return false;
+            }
+            if (key === 'nationality') {
+                return String(field.value || '').trim() !== '' && String(field.value).trim() !== 'Filipino';
+            }
+            if (key === 'employment_status') {
+                return String(field.value || '').trim() !== '' && String(field.value).trim() !== 'active';
+            }
+            return String(field.value || '').trim() !== '';
+        });
+    }
+
+    function updateProgress() {
+        const startedKeys = TAB_KEYS.filter((key) => sectionStarted(TAB_FIELDS[key]));
+        const started = startedKeys.length;
+        const requiredReady = ['first_name', 'last_name', 'employee_number', 'email', 'employment_status']
+            .every((key) => String(form.elements.namedItem(key)?.value || '').trim() !== '');
+
+        if (progressEl) {
+            progressEl.textContent = requiredReady
+                ? `${started} of ${TAB_KEYS.length} sections started · required fields complete`
+                : `${started} of ${TAB_KEYS.length} sections started`;
+        }
+
+        TAB_KEYS.forEach((key) => {
+            const seg = form.querySelector(`[data-progress-seg="${key}"]`);
+            if (!seg) {
+                return;
+            }
+            const done = startedKeys.includes(key);
+            const current = key === activeTabKey;
+            seg.classList.toggle('is-done', done);
+            seg.classList.toggle('is-current', current);
+        });
+    }
+
+    function refreshTabErrorBadges() {
+        updateTabErrorBadges(form, TAB_KEYS, TAB_FIELDS);
+    }
+
+    function focusFirstErrorTab(errors = {}) {
+        const fields = Object.keys(errors);
+        if (fields.includes('photo')) {
+            setActiveTab('employment');
+            return;
+        }
+        for (const key of TAB_KEYS) {
+            if (fields.some((field) => TAB_FIELDS[key].includes(field))) {
+                setActiveTab(key);
+                return;
+            }
+        }
+    }
+
+    function scrollFirstInvalidIntoView() {
+        const invalid = form.querySelector('.ui-input.is-invalid, .ui-select.is-invalid');
+        invalid?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        invalid?.focus?.({ preventScroll: true });
+    }
+
+    function setModalCopy(mode) {
+        if (mode === 'create') {
+            title.textContent = 'Add employee';
+            if (subtitle) {
+                subtitle.textContent = "Fill in the employee's details below";
+            }
+            return;
+        }
+        title.textContent = canManage ? 'Edit employee' : 'View employee';
+        if (subtitle) {
+            subtitle.textContent = canManage
+                ? 'Update employment, contact, and statutory details'
+                : 'View employee 201 record details';
+        }
     }
 
     function resetForm() {
@@ -300,6 +441,7 @@ export function initEmployeesModule() {
         if (form.remove_photo) {
             form.remove_photo.checked = false;
         }
+        setActiveTab('employment');
         const submit = form.querySelector('[type="submit"]');
         if (submit) {
             submit.classList.toggle('hidden', !canManage);
@@ -317,6 +459,10 @@ export function initEmployeesModule() {
         if (form.remove_photo) {
             form.remove_photo.disabled = !canManage;
         }
+        form.querySelectorAll('[data-photo-trigger]').forEach((btn) => {
+            btn.disabled = !canManage;
+        });
+        updateProgress();
     }
 
     function fillForm(employee) {
@@ -335,6 +481,8 @@ export function initEmployeesModule() {
             form.remove_photo.checked = false;
         }
         setLinkedUser(employee.user || null);
+        setActiveTab('employment');
+        updateProgress();
     }
 
     function openCreate() {
@@ -342,14 +490,14 @@ export function initEmployeesModule() {
             return;
         }
         resetForm();
-        title.textContent = 'Add employee';
+        setModalCopy('create');
         openModal(modal);
     }
 
     async function openEdit(id) {
         resetForm();
         editingId = id;
-        title.textContent = canManage ? 'Edit employee' : 'View employee';
+        setModalCopy('edit');
 
         try {
             const { data } = await http.get(`/employees/${id}`);
@@ -397,10 +545,69 @@ export function initEmployeesModule() {
         }
     }
 
+    form.querySelectorAll('[data-tab]').forEach((tab) => {
+        tab.addEventListener('click', () => setActiveTab(tab.dataset.tab));
+    });
+
+    form.querySelectorAll('[data-photo-trigger]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            if (!canManage || form.photo?.disabled) {
+                return;
+            }
+            form.photo?.click();
+        });
+    });
+
+    form.employee_number?.addEventListener('input', () => {
+        const field = form.employee_number;
+        if (!field) {
+            return;
+        }
+        const start = field.selectionStart;
+        const end = field.selectionEnd;
+        const next = String(field.value || '').toUpperCase();
+        if (field.value !== next) {
+            field.value = next;
+            if (typeof start === 'number' && typeof end === 'number') {
+                field.setSelectionRange(start, end);
+            }
+        }
+    });
+
+    form.addEventListener('input', (event) => {
+        const target = event.target;
+        if (target?.classList?.contains('is-invalid')) {
+            target.classList.remove('is-invalid');
+            target.removeAttribute('aria-invalid');
+            const err = form.querySelector(`[data-error="${target.name}"]`);
+            if (err) {
+                err.textContent = '';
+                err.classList.add('hidden');
+            }
+            refreshTabErrorBadges();
+        }
+        updateProgress();
+    });
+    form.addEventListener('change', (event) => {
+        const target = event.target;
+        if (target?.classList?.contains('is-invalid')) {
+            target.classList.remove('is-invalid');
+            target.removeAttribute('aria-invalid');
+            const err = form.querySelector(`[data-error="${target.name}"]`);
+            if (err) {
+                err.textContent = '';
+                err.classList.add('hidden');
+            }
+            refreshTabErrorBadges();
+        }
+        updateProgress();
+    });
+
     form.photo?.addEventListener('change', () => {
         const file = form.photo.files?.[0];
         if (!file) {
             setPhotoPreview(currentPhotoUrl, `${form.first_name.value} ${form.last_name.value}`.trim());
+            updateProgress();
             return;
         }
         if (form.remove_photo) {
@@ -408,6 +615,7 @@ export function initEmployeesModule() {
         }
         const objectUrl = URL.createObjectURL(file);
         setPhotoPreview(objectUrl, `${form.first_name.value} ${form.last_name.value}`.trim());
+        updateProgress();
     });
 
     form.remove_photo?.addEventListener('change', () => {
@@ -416,9 +624,11 @@ export function initEmployeesModule() {
                 form.photo.value = '';
             }
             setPhotoPreview(null, `${form.first_name.value} ${form.last_name.value}`.trim());
+            updateProgress();
             return;
         }
         setPhotoPreview(currentPhotoUrl, `${form.first_name.value} ${form.last_name.value}`.trim());
+        updateProgress();
     });
 
     panel.querySelector('[data-action="create"]')?.addEventListener('click', openCreate);
@@ -483,7 +693,11 @@ export function initEmployeesModule() {
             }
         } catch (error) {
             const response = error.response?.data;
-            showErrors(form, response?.errors || {});
+            const errors = response?.errors || {};
+            showErrors(form, errors);
+            refreshTabErrorBadges();
+            focusFirstErrorTab(errors);
+            scrollFirstInvalidIntoView();
             toastError(response?.message || 'Unable to save employee');
         } finally {
             setButtonLoading(submit, false);
@@ -495,6 +709,10 @@ export function initEmployeesModule() {
             const { data } = await http.get('/employees/meta');
             meta = data.data || meta;
             populateMetaSelects();
+            const statusFromUrl = new URLSearchParams(window.location.search).get('status');
+            if (statusFromUrl && statusFilter && meta.statuses?.includes(statusFromUrl)) {
+                statusFilter.value = statusFromUrl;
+            }
         } catch (error) {
             toastError(error.response?.data?.message || 'Unable to load employee meta');
         }

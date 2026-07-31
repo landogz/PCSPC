@@ -8,6 +8,8 @@ use Illuminate\Validation\Rule;
 
 class StoreEmployeeRequest extends FormRequest
 {
+    use EmployeeFormMessages;
+
     public function authorize(): bool
     {
         return $this->user()?->hasPermission('employees.manage') ?? false;

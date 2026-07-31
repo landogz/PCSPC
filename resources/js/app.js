@@ -1,3 +1,4 @@
+import '../css/app.css';
 import './bootstrap';
 import { initAuthModule } from './modules/auth';
 import { initLayoutModule } from './modules/layout';
@@ -7,6 +8,7 @@ import { initAuditModule } from './modules/audit';
 import { initAdministrationModule } from './modules/administration';
 import { initDepartmentsModule } from './modules/departments';
 import { initEmployeesModule } from './modules/employees';
+import { initDashboardModule } from './modules/dashboard';
 
 initLayoutModule();
 initAuthModule();
@@ -16,3 +18,4 @@ initAuditModule();
 initAdministrationModule();
 initDepartmentsModule();
 initEmployeesModule();
+initDashboardModule();
