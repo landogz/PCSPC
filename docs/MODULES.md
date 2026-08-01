@@ -67,7 +67,7 @@ routes under /api/v1/{key}
 | Lookups | ✅ SPA + `/api/v1/lookups` (ADM-006 master data tables) |
 | Schedules | ✅ SPA + `/api/v1/schedules` (ADM-009 employee/department shift assignment) |
 | Users & Security | ✅ users, roles, **ADM-005 password policy** |
-| Employees 201 | ✅ SPA + `/api/v1/employees` (v1 fields + Excel + dependents + education + employment history + training/medical stubs) |
+| Employees 201 | ✅ SPA + `/api/v1/employees` (v1 fields + Excel + dependents + education + employment history + **career history** + training/medical stubs) |
 | Training / Medical | 🔶 P3 stubs (201 tabs + module roadmap); full API pack in P6 |
 | Documents | ✅ Drive-style SPA + `/api/v1/documents` (preview, bulk, versions, expiry digest) |
 | Other module pages | ⬜ Scaffolds until mapped delivery phase |

@@ -14,6 +14,7 @@ use App\Http\Controllers\API\Shifts\ShiftController;
 use App\Http\Controllers\API\Employees\EmployeeController;
 use App\Http\Controllers\API\Employees\EmployeeDependentController;
 use App\Http\Controllers\API\Employees\EmployeeEducationController;
+use App\Http\Controllers\API\Employees\EmployeeCareerHistoryController;
 use App\Http\Controllers\API\Employees\EmployeeEmploymentHistoryController;
 use App\Http\Controllers\API\Security\RoleController as SecurityRoleController;
 use App\Http\Controllers\API\Security\UserController as SecurityUserController;
@@ -190,6 +191,7 @@ Route::prefix('api/v1')->middleware(['auth:sanctum', 'password.current'])->group
             Route::get('/{employee}/dependents', [EmployeeDependentController::class, 'index']);
             Route::get('/{employee}/educations', [EmployeeEducationController::class, 'index']);
             Route::get('/{employee}/employment-history', [EmployeeEmploymentHistoryController::class, 'index']);
+            Route::get('/{employee}/career-history', [EmployeeCareerHistoryController::class, 'index']);
             Route::get('/{employee}', [EmployeeController::class, 'show']);
         });
 
@@ -204,6 +206,9 @@ Route::prefix('api/v1')->middleware(['auth:sanctum', 'password.current'])->group
             Route::post('/{employee}/employment-history', [EmployeeEmploymentHistoryController::class, 'store']);
             Route::put('/{employee}/employment-history/{history}', [EmployeeEmploymentHistoryController::class, 'update']);
             Route::delete('/{employee}/employment-history/{history}', [EmployeeEmploymentHistoryController::class, 'destroy']);
+            Route::post('/{employee}/career-history', [EmployeeCareerHistoryController::class, 'store']);
+            Route::put('/{employee}/career-history/{history}', [EmployeeCareerHistoryController::class, 'update']);
+            Route::delete('/{employee}/career-history/{history}', [EmployeeCareerHistoryController::class, 'destroy']);
             Route::post('/{employee}/deactivate', [EmployeeController::class, 'deactivate']);
             Route::match(['put', 'post'], '/{employee}', [EmployeeController::class, 'update']);
             Route::delete('/{employee}', [EmployeeController::class, 'destroy']);

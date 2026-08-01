@@ -3,6 +3,7 @@
 namespace App\Services\Employees;
 
 use App\Models\Employee;
+use App\Models\EmployeeCareerHistory;
 use App\Models\EmployeeDependent;
 use App\Models\EmployeeEducation;
 use App\Models\User;
@@ -368,7 +369,10 @@ class EmployeeService
      *   dependent_relationships: list<string>,
      *   dependent_relationship_options: list<array{code: string, label: string}>,
      *   education_levels: list<string>,
-     *   education_level_options: list<array{code: string, label: string}>
+     *   education_level_options: list<array{code: string, label: string}>,
+     *   employment_categories: list<string>,
+     *   employment_category_options: list<array{code: string, label: string}>,
+     *   salary_rate_types: list<string>
      * }
      */
     public function meta(): array
@@ -376,6 +380,7 @@ class EmployeeService
         $statusOptions = $this->lookups->activeOptions('employment_status', Employee::STATUSES);
         $relationshipOptions = $this->lookups->activeOptions('dependent_relationship', EmployeeDependent::RELATIONSHIPS);
         $educationOptions = $this->lookups->activeOptions('education_level', EmployeeEducation::LEVELS);
+        $categoryOptions = $this->lookups->activeOptions('employment_category', EmployeeCareerHistory::CATEGORIES);
 
         return [
             'departments' => $this->employees->activeDepartments()->map(fn ($department) => [
@@ -391,6 +396,9 @@ class EmployeeService
             'dependent_relationship_options' => $relationshipOptions,
             'education_levels' => array_column($educationOptions, 'code'),
             'education_level_options' => $educationOptions,
+            'employment_categories' => array_column($categoryOptions, 'code'),
+            'employment_category_options' => $categoryOptions,
+            'salary_rate_types' => EmployeeCareerHistory::RATE_TYPES,
         ];
     }
 

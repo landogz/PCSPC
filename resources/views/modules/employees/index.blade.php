@@ -401,7 +401,7 @@
                             </section>
                         </div>
 
-                        {{-- Employment history --}}
+                        {{-- Employment + career history --}}
                         <div data-tab-panel="history" role="tabpanel" class="hidden space-y-5">
                             <section class="rounded-2xl border border-border bg-surface p-4 sm:p-5 space-y-4">
                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between border-b border-border pb-3">
@@ -430,6 +430,35 @@
                                     <p class="text-xs text-muted mt-1">Add prior employers and roles for this employee.</p>
                                 </div>
                                 <div data-history-list class="space-y-3"></div>
+                            </section>
+
+                            <section class="rounded-2xl border border-border bg-surface p-4 sm:p-5 space-y-4">
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between border-b border-border pb-3">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary-soft text-primary flex-shrink-0">
+                                            <i class="ph ph-currency-circle-dollar text-base"></i>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <h4 class="text-sm font-semibold tracking-wide text-heading">Career history</h4>
+                                            <p class="text-xs text-muted">Internal position, category, and salary changes</p>
+                                        </div>
+                                    </div>
+                                    @if ($canManage)
+                                        <button type="button" data-career-add class="hidden inline-flex w-full sm:w-auto items-center justify-center gap-1.5 h-10 min-h-[44px] sm:min-h-10 px-3.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-strong transition-colors whitespace-nowrap">
+                                            <i class="ph ph-plus text-base"></i>
+                                            Add career change
+                                        </button>
+                                    @endif
+                                </div>
+                                <div data-career-locked class="rounded-xl border border-dashed border-border bg-subtle/50 px-4 py-6 text-center">
+                                    <p class="text-sm font-medium text-heading">Save the employee first</p>
+                                    <p class="text-xs text-muted mt-1">Career history can be added after the 201 is created.</p>
+                                </div>
+                                <div data-career-empty class="hidden rounded-xl border border-dashed border-border bg-subtle/50 px-4 py-6 text-center">
+                                    <p class="text-sm font-medium text-heading">No career history yet</p>
+                                    <p class="text-xs text-muted mt-1">Track position, employment category, and salary effective dates.</p>
+                                </div>
+                                <div data-career-list class="space-y-3"></div>
                             </section>
                         </div>
 
@@ -673,6 +702,73 @@
                     <div class="flex flex-shrink-0 flex-col-reverse gap-2 border-t border-border bg-surface p-4 sm:flex-row sm:justify-end sm:gap-3 sm:p-5">
                         <button type="button" data-modal-dismiss class="ui-btn-secondary min-h-[44px] px-5">Cancel</button>
                         <button type="submit" class="ui-btn-primary min-h-[44px] min-w-[8.5rem]">Save history</button>
+                    </div>
+                </form>
+            </x-ui.modal>
+            <x-ui.modal
+                id="career-history-modal"
+                title="Add career history"
+                subtitle="Position, category, and salary effective dates"
+                max-width="max-w-lg"
+                class="z-[80]"
+            >
+                <form id="career-history-form" class="flex min-h-0 flex-1 flex-col" novalidate>
+                    <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="sm:col-span-2">
+                                <label class="ui-label ui-label-required" for="career-position">Position</label>
+                                <input id="career-position" name="position_title" required class="ui-input" autocomplete="off" maxlength="150">
+                                <p class="hidden text-xs text-danger mt-1" data-error="position_title"></p>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="ui-label ui-label-required" for="career-category">Employment category</label>
+                                <select id="career-category" name="employment_category" required class="ui-select">
+                                    <option value="">Select category</option>
+                                </select>
+                                <p class="hidden text-xs text-danger mt-1" data-error="employment_category"></p>
+                            </div>
+                            <div>
+                                <label class="ui-label" for="career-salary">Basic salary</label>
+                                <input id="career-salary" name="basic_salary" type="number" min="0" step="0.01" inputmode="decimal" class="ui-input" placeholder="0.00">
+                                <p class="hidden text-xs text-danger mt-1" data-error="basic_salary"></p>
+                            </div>
+                            <div>
+                                <label class="ui-label ui-label-required" for="career-rate">Rate type</label>
+                                <select id="career-rate" name="salary_rate_type" required class="ui-select">
+                                    <option value="monthly">Monthly</option>
+                                    <option value="daily">Daily</option>
+                                    <option value="hourly">Hourly</option>
+                                </select>
+                                <p class="hidden text-xs text-danger mt-1" data-error="salary_rate_type"></p>
+                            </div>
+                            <div>
+                                <label class="ui-label" for="career-currency">Currency</label>
+                                <input id="career-currency" name="currency" class="ui-input uppercase" maxlength="3" value="PHP" autocomplete="off">
+                                <p class="hidden text-xs text-danger mt-1" data-error="currency"></p>
+                            </div>
+                            <div>
+                                <label class="ui-label ui-label-required" for="career-from">Effective from</label>
+                                <input id="career-from" name="effective_from" type="date" required class="ui-input">
+                                <p class="hidden text-xs text-danger mt-1" data-error="effective_from"></p>
+                            </div>
+                            <div>
+                                <label class="ui-label" for="career-to">Effective to</label>
+                                <input id="career-to" name="effective_to" type="date" class="ui-input">
+                                <p class="hidden text-xs text-danger mt-1" data-error="effective_to"></p>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="ui-label" for="career-notes">Notes</label>
+                                <input id="career-notes" name="notes" class="ui-input" maxlength="500" placeholder="Optional">
+                            </div>
+                        </div>
+                        <label class="inline-flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                            <input type="checkbox" name="is_current" value="1" class="rounded border-border accent-primary">
+                            This is the current position / pay
+                        </label>
+                    </div>
+                    <div class="flex flex-shrink-0 flex-col-reverse gap-2 border-t border-border bg-surface p-4 sm:flex-row sm:justify-end sm:gap-3 sm:p-5">
+                        <button type="button" data-modal-dismiss class="ui-btn-secondary min-h-[44px] px-5">Cancel</button>
+                        <button type="submit" class="ui-btn-primary min-h-[44px] min-w-[8.5rem]">Save career</button>
                     </div>
                 </form>
             </x-ui.modal>

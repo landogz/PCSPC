@@ -83,15 +83,45 @@ class LookupRepository
      */
     public function activeByType(string $type): Collection
     {
-        return Cache::remember(
+        $rows = Cache::remember(
             $this->cacheKey($type),
             self::CACHE_TTL_SECONDS,
-            static fn () => LookupValue::query()
+            static function () use ($type): array {
+                return LookupValue::query()
+                    ->ofType($type)
+                    ->active()
+                    ->ordered()
+                    ->get(['uuid', 'type', 'code', 'label', 'sort_order', 'is_active', 'is_system'])
+                    ->map(static fn (LookupValue $lookup): array => [
+                        'uuid' => $lookup->uuid,
+                        'type' => $lookup->type,
+                        'code' => $lookup->code,
+                        'label' => $lookup->label,
+                        'sort_order' => $lookup->sort_order,
+                        'is_active' => $lookup->is_active,
+                        'is_system' => $lookup->is_system,
+                    ])
+                    ->all();
+            }
+        );
+
+        if (! is_array($rows)) {
+            Cache::forget($this->cacheKey($type));
+
+            return LookupValue::query()
                 ->ofType($type)
                 ->active()
                 ->ordered()
-                ->get(['uuid', 'type', 'code', 'label', 'sort_order', 'is_active', 'is_system'])
-        );
+                ->get(['uuid', 'type', 'code', 'label', 'sort_order', 'is_active', 'is_system']);
+        }
+
+        return collect($rows)->map(static function (array $row): LookupValue {
+            $lookup = new LookupValue;
+            $lookup->forceFill($row);
+            $lookup->exists = true;
+
+            return $lookup;
+        });
     }
 
     /**

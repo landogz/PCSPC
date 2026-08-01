@@ -26,6 +26,11 @@ return [
             'description' => 'Active, inactive, separated, on leave',
             'module' => 'employees',
         ],
+        'employment_category' => [
+            'label' => 'Employment category',
+            'description' => 'Permanent, probationary, contractual, and other appointment types',
+            'module' => 'employees',
+        ],
         'dependent_relationship' => [
             'label' => 'Dependent relationship',
             'description' => 'Spouse, child, parent, and other relationships',

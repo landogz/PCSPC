@@ -9,6 +9,7 @@ import { fillSidebarUser } from '../layout';
 import { initEmployeeDependents } from './dependents';
 import { initEmployeeEducations } from './education';
 import { initEmployeeEmploymentHistory } from './employment-history';
+import { initEmployeeCareerHistory } from './career-history';
 import { initEmployeeFormTabsNav } from './form-tabs-nav';
 
 const FIELD_KEYS = [
@@ -133,6 +134,7 @@ export function initEmployeesModule() {
     let dependentsCount = 0;
     let educationCount = 0;
     let historyCount = 0;
+    let careerCount = 0;
 
     function rowActionsFor(row) {
         const actions = [{ key: 'view', label: canManage ? 'Edit' : 'View' }];
@@ -449,6 +451,7 @@ export function initEmployeesModule() {
             educations.reload();
         } else if (tabKey === 'history') {
             histories.reload();
+            careers.reload();
         }
     }
 
@@ -460,7 +463,7 @@ export function initEmployeesModule() {
             return educationCount > 0;
         }
         if (tabKey === 'history') {
-            return historyCount > 0;
+            return historyCount > 0 || careerCount > 0;
         }
         return fields.some((key) => {
             const field = form.elements.namedItem(key);
@@ -527,6 +530,16 @@ export function initEmployeesModule() {
         canManage,
         onCountChange: (count) => {
             historyCount = count;
+            updateProgress();
+        },
+    });
+
+    const careers = initEmployeeCareerHistory({
+        root: form,
+        getEmployeeId: () => editingId,
+        canManage,
+        onCountChange: (count) => {
+            careerCount = count;
             updateProgress();
         },
     });
@@ -609,6 +622,7 @@ export function initEmployeesModule() {
         dependents.reset();
         educations.reset();
         histories.reset();
+        careers.reset();
         updateProgress();
     }
 
@@ -656,6 +670,7 @@ export function initEmployeesModule() {
                 dependents.reload(),
                 educations.reload(),
                 histories.reload(),
+                careers.reload(),
             ]);
         } catch (error) {
             toastError(error.response?.data?.message || 'Unable to load employee');
@@ -894,6 +909,7 @@ export function initEmployeesModule() {
                 await dependents.reload();
                 await educations.reload();
                 await histories.reload();
+                await careers.reload();
             } else {
                 closeModal(modal);
             }
@@ -920,6 +936,11 @@ export function initEmployeesModule() {
             educations.setMeta({
                 levels: meta.education_levels || [],
                 level_options: meta.education_level_options || [],
+            });
+            careers.setMeta({
+                employment_categories: meta.employment_categories || [],
+                employment_category_options: meta.employment_category_options || [],
+                salary_rate_types: meta.salary_rate_types || [],
             });
             const statusFromUrl = new URLSearchParams(window.location.search).get('status');
             if (statusFromUrl && statusFilter && meta.statuses?.includes(statusFromUrl)) {

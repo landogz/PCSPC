@@ -100,6 +100,13 @@ class Employee extends Model
             ->orderByDesc('date_from');
     }
 
+    public function careerHistories(): HasMany
+    {
+        return $this->hasMany(EmployeeCareerHistory::class)
+            ->orderByDesc('is_current')
+            ->orderByDesc('effective_from');
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(EmployeeDocument::class)

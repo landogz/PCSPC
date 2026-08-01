@@ -3,6 +3,7 @@
 namespace App\Services\Lookups;
 
 use App\Models\Employee;
+use App\Models\EmployeeCareerHistory;
 use App\Models\EmployeeDocument;
 use App\Models\EmployeeDependent;
 use App\Models\EmployeeEducation;
@@ -204,6 +205,7 @@ class LookupService
             'gender' => ['male', 'female', 'other'],
             'civil_status' => ['single', 'married', 'widowed', 'separated'],
             'employment_status' => Employee::STATUSES,
+            'employment_category' => EmployeeCareerHistory::CATEGORIES,
             'dependent_relationship' => EmployeeDependent::RELATIONSHIPS,
             'education_level' => EmployeeEducation::LEVELS,
             'holiday_type' => Holiday::TYPES,
@@ -229,6 +231,7 @@ class LookupService
                 'holiday_type.company' => 'Company',
                 'document_category.government_id' => 'Government ID',
                 'employment_status.on_leave' => 'On leave',
+                'employment_category.project_based' => 'Project-based',
                 'education_level.high_school' => 'High school',
                 default => Str::headline(str_replace('_', ' ', $code)),
             };

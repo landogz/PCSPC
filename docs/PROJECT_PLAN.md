@@ -26,7 +26,7 @@ Interactive views:
 | **P0** Procurement | 🔶 | Bid materials in `docs/hris-bidding/`; pre-bid still upcoming |
 | **P1** Discovery & Design | ⬜ | Workshops / SDD / ERD not started |
 | **P2** Platform Foundation | ✅ / 🔶 | **Done:** SPA shell, Sanctum auth, MFA, RBAC, Users & Security, Roles, Audit Log + domain AuditLogger, **ADM-005 password policy**, **Dashboard HR command center** (`/api/v1/dashboard/stats` — KPIs, department/headcount charts, pending incomplete profiles, on-leave list, recent activity; attendance/leave chart stubs for P4–P5), ApiResponse, FormRequests, nav RBAC, toasts, feature tests. **Open:** PostgreSQL switch, full CI/CD, three envs on GCP; live attendance/leave widgets pending those modules |
-| **P3** Employee 201 + Admin | ✅ | **Done:** Employees 201, Departments, Holidays (**ADM-008**), Shifts + **Schedules (ADM-009)**, System parameters (**ADM-010**), **Lookups (ADM-006)**, Documents (**DOC-001**), Training/Medical stubs. Timekeeping consumption of schedules remains P5. |
+| **P3** Employee 201 + Admin | ✅ | **Done:** Employees 201 (incl. **career history** — position/category/salary), Departments, Holidays (**ADM-008**), Shifts + **Schedules (ADM-009)**, System parameters (**ADM-010**), **Lookups (ADM-006)** + employment category, Documents (**DOC-001**), Training/Medical stubs. Timekeeping consumption of schedules remains P5. |
 | **P4–P10** | ⬜ | Not started |
 
 ---
@@ -224,8 +224,8 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 - ✅ System parameters (**Annex A ADM-010**) (`GET|PUT /api/v1/administration/system-parameters`) — company identity, **company logo** upload/reset, timezone, leave-year start, rest-day holiday hours, default grace; audited; Administration UI; logo wired to login/sidebar/MFA mail
 - ✅ Training & medical stubs — Employee 201 tabs (EMP-005 / EMP-006 placeholders) + `/modules/training` & `/modules/medical` roadmap pages; full nested CRUD deferred to **P6**
 - ✅ Document repository (**DOC-001**) — `/modules/documents` + `/api/v1/documents` (private storage, categories, expiry filters, download, audit); dashboard “expiring soon” wired; Drive-style UX (expiry tabs, folder nav, thumbnails/quick view, bulk actions, versions, storage meter, expiry digest mail)
-- ⬜ Historical salary / position / category tracking
-- ✅ Lookups (**ADM-006**) — `/modules/lookups` + `/api/v1/lookups` (gender, civil status, employment status, relationships, education levels, holiday types, document categories); system values protected; options API wired into Employee 201 / validation
+- ✅ Historical salary / position / category tracking — `/api/v1/employees/{id}/career-history` (encrypted salary, employment category lookup, effective dates, current flag syncs `position_title`); Career panel on Employee 201 History tab
+- ✅ Lookups (**ADM-006**) — `/modules/lookups` + `/api/v1/lookups` (gender, civil status, employment status, **employment category**, relationships, education levels, holiday types, document categories); system values protected; options API wired into Employee 201 / validation
 - ✅ Org / admin master data: departments (**ADM-007**), holidays (**ADM-008**), shifts + schedules (**ADM-009**), system parameters (**ADM-010**), lookup tables (**ADM-006**)
 
 **Exit (local partial):** EMP + Departments + Security usable with demo seeded data.  
@@ -322,7 +322,7 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 | Administration | ADM-001…010 | P2–P3 | ✅ hub + lookups + holidays + shifts/schedules + system parameters; password policy under Users & Security |
 
 | User Access & Security | SEC-001…002 | P2–P3 | ✅ |
-| Employee Management | EMP-001…006 | P3 | 🔶 201 v1 + photo + Excel + dependents + education + employment history + training/medical stubs; nested training/medical CRUD in P6 |
+| Employee Management | EMP-001…006 | P3 | 🔶 201 v1 + photo + Excel + dependents + education + employment history + **career history** (position/category/salary) + training/medical stubs; nested training/medical CRUD in P6 |
 | Leave Management | LEV-001…002 | P4 | ⬜ scaffold only |
 | Overtime Management | OT-001 | P4 | ⬜ scaffold only |
 | Timekeeping + Biometric | TM-001…002 | P5 | ⬜ scaffold only |
