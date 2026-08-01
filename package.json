@@ -16,6 +16,7 @@
     "dependencies": {
         "@phosphor-icons/web": "^2.1.2",
         "axios": "^1.19.0",
+        "chart.js": "^4.5.1",
         "datatables.net": "^3.0.0",
         "datatables.net-dt": "^3.0.0",
         "marked": "^18.0.7",

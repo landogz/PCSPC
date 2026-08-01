@@ -4,7 +4,7 @@
 **Client:** Philippine Coastal Storage & Pipeline Corporation (PCSPC)  
 **Sources:** `docs/hris-bidding/` (Invitation to Bid, TOR, Scope of Work, Annex A, Form of Proposal)  
 **Proposed delivery:** ~36 weeks to Go-Live + **6 months warranty** (duration subject to PCSPC approval)  
-**Plan last updated:** 2026-07-31
+**Plan last updated:** 2026-08-01
 
 Interactive views:
 - Plan: [`hris-project-plan.canvas.tsx`](/Users/landogz/.cursor/projects/Applications-XAMPP-xamppfiles-htdocs-PCSPC/canvases/hris-project-plan.canvas.tsx)
@@ -25,8 +25,8 @@ Interactive views:
 |-------|--------|-------------|
 | **P0** Procurement | 🔶 | Bid materials in `docs/hris-bidding/`; pre-bid still upcoming |
 | **P1** Discovery & Design | ⬜ | Workshops / SDD / ERD not started |
-| **P2** Platform Foundation | ✅ / 🔶 | **Done:** SPA shell, Sanctum auth, MFA, RBAC, Users & Security, Roles, Audit Log + domain AuditLogger, **ADM-005 password policy**, **Dashboard live stats** (employees / on leave / departments via `/api/v1/dashboard/stats`), ApiResponse, FormRequests, nav RBAC, toasts, feature tests. **Open:** PostgreSQL switch, full CI/CD, three envs on GCP; attendance widgets pending timekeeping |
-| **P3** Employee 201 + Admin | 🔶 | **Done:** Employees 201 CRUD (employment/personal/statutory), User↔Employee link + Employee role, Departments, protected platform super-admin, employee # owned by Employees (Security Add User picks from 201). **Open:** dependents/history, holidays/shifts, DOC-001, Excel export |
+| **P2** Platform Foundation | ✅ / 🔶 | **Done:** SPA shell, Sanctum auth, MFA, RBAC, Users & Security, Roles, Audit Log + domain AuditLogger, **ADM-005 password policy**, **Dashboard HR command center** (`/api/v1/dashboard/stats` — KPIs, department/headcount charts, pending incomplete profiles, on-leave list, recent activity; attendance/leave chart stubs for P4–P5), ApiResponse, FormRequests, nav RBAC, toasts, feature tests. **Open:** PostgreSQL switch, full CI/CD, three envs on GCP; live attendance/leave widgets pending those modules |
+| **P3** Employee 201 + Admin | ✅ | **Done:** Employees 201, Departments, Holidays (**ADM-008**), Shifts + **Schedules (ADM-009)**, System parameters (**ADM-010**), **Lookups (ADM-006)**, Documents (**DOC-001**), Training/Medical stubs. Timekeeping consumption of schedules remains P5. |
 | **P4–P10** | ⬜ | Not started |
 
 ---
@@ -39,7 +39,7 @@ flowchart TB
     direction LR
     P0["P0 Procurement<br/>Pre-bid → Award<br/>🔶"] --> P1["P1 Discovery<br/>& Design<br/>⬜"]
     P1 --> P2["P2 Platform<br/>Foundation<br/>✅ / 🔶"]
-    P2 --> P3["P3 Employee 201<br/>+ Admin<br/>🔶"]
+    P2 --> P3["P3 Employee 201<br/>+ Admin<br/>✅"]
     P3 --> P4["P4 Leave / OT<br/>/ Workflow<br/>⬜"]
   end
   subgraph R2[" "]
@@ -55,8 +55,8 @@ flowchart TB
   classDef done fill:#e6f4ea,stroke:#2f9e44,color:#0e1218
   classDef partial fill:#fff5cc,stroke:#c9a000,color:#0e1218
   classDef todo fill:#eef0f3,stroke:#94a0b0,color:#404a60
-  class P2 done
-  class P0,P3 partial
+  class P2,P3 done
+  class P0 partial
   class P1,P4,P5,P6,P7,P8,P9,P10 todo
 ```
 
@@ -110,8 +110,8 @@ flowchart TD
 | Web SPA | Laravel Sanctum cookie / stateful SPA auth | ✅ |
 | Mobile | Sanctum personal access token (Bearer) | 🔶 API-ready; mobile app later |
 | API | Shared `/api/v1/auth/login`, `/logout`, `/me`, `/mfa/*` | ✅ |
-| MFA | Required for privileged roles (SEC-002 / ADM-004) | ✅ |
-| Password policy | Complexity, expiration, lockout (ADM-005) | ✅ complexity + expiration + history + force-change + Admin UI; lockout ✅ |
+| MFA | Required for privileged roles (SEC-002 / ADM-004); OTP emailed via SMTP (`MfaOtpMail`) + resend | ✅ |
+| Password policy | Complexity, expiration, lockout (ADM-005) | ✅ complexity + expiration + history + force-change + Security UI; lockout ✅ |
 | Authorization | RBAC after login — hide UI **and** enforce Policies/Gates on API | ✅ permission middleware + nav filter |
 | Audit | Log success, failure, lockout, MFA events (AUD-001) | ✅ |
 | Transport | HTTPS/TLS only | ⬜ enforce on Staging/Live |
@@ -178,7 +178,7 @@ Design, develop, customize, implement, and support an integrated **Human Resourc
 Aligned to enterprise Laravel API SPA standards + SOW Part B:
 
 - ✅ Laravel `/api/v1` + SPA shell (Axios, Tailwind, DataTables / server-table patterns)
-- ✅ Sanctum auth, RBAC, MFA, password policy/lockout (ADM-005: complexity, expiration, history, force-change)
+- ✅ Sanctum auth, RBAC, MFA (email OTP + resend), password policy/lockout (ADM-005: complexity, expiration, history, force-change)
 - ✅ `ApiResponse` standard, FormRequest validation, permission middleware
 - ✅ Audit logs (auth events + shared `AuditLogger` for Security / Employees / Departments mutations → `/modules/audit`); 🔶 email notifications skeleton (UI scaffold only)
 - ⬜ **PostgreSQL** schema baseline (still MySQL on local XAMPP)
@@ -197,8 +197,8 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 - ✅ Cursor rule: always write audit on done mutations and verify in Audit module
 - ✅ Navigation filtered by RBAC; module pages 403 without permission
 - ✅ Dark mode, shared modal shell (sticky footer), toast success/error + Swal confirms
-- ✅ Password policy Administration UI (`/modules/administration`) + forced change at `/account/password`
-- ✅ Dashboard live KPIs (`GET /api/v1/dashboard/stats`) — employees headcount, on leave, active departments; attendance/check-ins pending timekeeping
+- ✅ Password policy Security UI (`/modules/security` · Password policy tab) + forced change at `/account/password`
+- ✅ Dashboard HR command center (`GET /api/v1/dashboard/stats`) — live KPIs, department headcount + hire/separation charts (Chart.js), pending incomplete profiles, on-leave roster, recent audit activity; attendance/leave/payroll/training widgets stubbed until P4–P7
 
 **Exit (local):** Deployable shell with auth, user/role admin, audit; secrets not in repo.  
 **Exit (contract):** still needs Staging/Live + PostgreSQL + full CI/CD.
@@ -213,11 +213,20 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 - ✅ Employees SPA (`/modules/employees`) — filters, context menu, Actions column, sectioned tabbed modal (Employment / Personal / Contact / Documents) with post-submit validation UX (human error copy, tab error badges, informational account callout)
 - ✅ Employee profile photo (upload/remove on 201) → wired to linked User `avatar_url`; shown in Employees table, Security users/search, sidebar & topbar
 - ✅ Departments (`/modules/departments`) — org units CRUD
-- ⬜ Dependents, education, employment history, training, medical stubs
+- ✅ Excel export (`GET /api/v1/employees/export`) — filter-aware `.xlsx`, statutory masked unless `employees.manage`, audit `employee.exported`
+- ✅ Employee dependents CRUD (`/api/v1/employees/{id}/dependents`) — relationship, beneficiary/emergency flags, audited; Dependents tab in employee modal
+- ✅ Education CRUD (`/api/v1/employees/{id}/educations`) — levels, highest attainment flag, audited; Education tab
+- ✅ Employment history CRUD (`/api/v1/employees/{id}/employment-history`) — prior employers, current-job flag, audited; History tab
+- ✅ Holidays CRUD (**Annex A ADM-008**) (`/api/v1/holidays`) — types, recurring/double-pay/paid-hours flags, audited; `/modules/holidays`
+- ✅ Philippine holiday calendar seeder (regular + special non-working/working + movable Holy Week / Eid / Chinese New Year) for 2025–2030
+- ✅ Shifts + Schedules (**Annex A ADM-009**) — templates (`/api/v1/shifts`) + employee/department assignments (`/api/v1/schedules`, `/modules/schedules`); timekeeping punch rules consume them in **P5**
+- ✅ Philippine shift templates seeder (office, rotating A/B/C, night/graveyard, 12h, BPO, ops, security, half-day)
+- ✅ System parameters (**Annex A ADM-010**) (`GET|PUT /api/v1/administration/system-parameters`) — company identity, **company logo** upload/reset, timezone, leave-year start, rest-day holiday hours, default grace; audited; Administration UI; logo wired to login/sidebar/MFA mail
+- ✅ Training & medical stubs — Employee 201 tabs (EMP-005 / EMP-006 placeholders) + `/modules/training` & `/modules/medical` roadmap pages; full nested CRUD deferred to **P6**
+- ✅ Document repository (**DOC-001**) — `/modules/documents` + `/api/v1/documents` (private storage, categories, expiry filters, download, audit); dashboard “expiring soon” wired; Drive-style UX (expiry tabs, folder nav, thumbnails/quick view, bulk actions, versions, storage meter, expiry digest mail)
 - ⬜ Historical salary / position / category tracking
-- 🔶 Org structure (departments done); holidays, shifts, master data, system parameters
-- ⬜ Document repository (DOC-001)
-- ⬜ Excel export
+- ✅ Lookups (**ADM-006**) — `/modules/lookups` + `/api/v1/lookups` (gender, civil status, employment status, relationships, education levels, holiday types, document categories); system values protected; options API wired into Employee 201 / validation
+- ✅ Org / admin master data: departments (**ADM-007**), holidays (**ADM-008**), shifts + schedules (**ADM-009**), system parameters (**ADM-010**), lookup tables (**ADM-006**)
 
 **Exit (local partial):** EMP + Departments + Security usable with demo seeded data.  
 **Exit (contract):** full EMP + ADM UAT-ready on Staging with sample migrated data.
@@ -240,10 +249,11 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 
 ### P5 — Timekeeping + Biometric (W17–W21) ⬜
 
+- 🔶 Employee / group **schedules** using shift templates — **assignment CRUD done (ADM-009 / `/modules/schedules`)**; wire into attendance computation here
 - ⬜ Biometric device integration & auto-sync (TM-001)
-- ⬜ Attendance processing & accurate computation (TM-002)
-- ⬜ Holiday / rest-day / double-pay rules
-- ⬜ Manhour & OT summary reports
+- ⬜ Attendance processing & accurate computation (TM-002) — uses assigned shift + holiday calendar + system grace/rest-day hours
+- ⬜ Holiday / rest-day / double-pay rules (consumes ADM-008 + ADM-010)
+- ⬜ Manhour & OT summary reports (SOW A.8)
 - ⬜ Query optimization, indexing, connection pooling, load test for punch volume
 
 **Exit:** Punch → computed attendance validated vs PCSPC sample period.
@@ -252,8 +262,8 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 
 ### P6 — Medical, Training, Performance, Comp & Benefits (W22–W26) ⬜
 
-- ⬜ Medical: APE, checkup, vaccines, reimbursement claims (limits, principal/dependent, attachments, Excel)
-- ⬜ Training & confirmation
+- ⬜ Medical: APE, checkup, vaccines, reimbursement claims (limits, principal/dependent, attachments, Excel) — **P3:** Employee 201 tab + `/modules/medical` roadmap stub ✅
+- ⬜ Training & confirmation — **P3:** Employee 201 tab + `/modules/training` roadmap stub ✅
 - ⬜ Performance records
 - ⬜ Compensation & benefits with history
 - 🔶 Encrypt/mask sensitive fields — statutory already encrypted/masked on Employees; medical/comp still open
@@ -309,22 +319,23 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 
 | Module / area | Req IDs | Phase | Status |
 |---------------|---------|-------|--------|
-| Administration | ADM-001…010 | P2–P3 | 🔶 hub + departments + password policy; holidays/shifts/params open |
+| Administration | ADM-001…010 | P2–P3 | ✅ hub + lookups + holidays + shifts/schedules + system parameters; password policy under Users & Security |
+
 | User Access & Security | SEC-001…002 | P2–P3 | ✅ |
-| Employee Management | EMP-001…006 | P3 | 🔶 201 v1 + photo/avatar + user link; dependents/history/Excel open |
+| Employee Management | EMP-001…006 | P3 | 🔶 201 v1 + photo + Excel + dependents + education + employment history + training/medical stubs; nested training/medical CRUD in P6 |
 | Leave Management | LEV-001…002 | P4 | ⬜ scaffold only |
 | Overtime Management | OT-001 | P4 | ⬜ scaffold only |
 | Timekeeping + Biometric | TM-001…002 | P5 | ⬜ scaffold only |
 | Workflow Engine | WF-001 | P4 | ⬜ scaffold only |
-| Document Management | DOC-001 | P3 | ⬜ scaffold only |
+| Document Management | DOC-001 | P3 | ✅ Drive-style repo: expiry tabs, folders, preview, bulk, versions, digest |
 | Notifications | NOT-001 | P3–P4 | ⬜ scaffold only |
 | Reporting & Analytics | RPT-001 | P7 | ⬜ scaffold only |
 | Audit & Compliance | AUD-001 | P2–P8 | ✅ auth + domain AuditLogger (users/roles/employees/departments); extend per new module |
 | API & Integration | API-001 | P2–P5 | 🔶 `/api/v1` auth + modules started |
 | Business Continuity | BCP-001 | P8 | ⬜ |
 | DevOps & Governance | DEV-001 | P2–P8 | 🔶 local tests; full CI/CD open |
-| Medical Records | Annex A | P6 | ⬜ scaffold only |
-| Performance / Training / Comp & Benefits | SOW A.3 | P6 | ⬜ scaffold only |
+| Medical Records | EMP-006 · MED-001 | P3 stub / P6 | 🔶 module + 201 tab stubs; full CRUD in P6 |
+| Performance / Training / Comp & Benefits | SOW A.3 · EMP-005 · TRN-001 | P3 stub / P6 | 🔶 Training stub done; Performance / Comp still scaffold |
 | Loans / Deductions / Earnings / Travel | SOW A.3 | P7 | ⬜ scaffold only |
 | Mobile App (self-service) | Annex A | P4–P7 | ⬜ |
 
@@ -409,4 +420,4 @@ Total Contract Price: **VAT Zero-Rated** (Form of Proposal). Proposal validity: 
 3. Prepare Gantt (this plan as baseline) + team CVs.  
 4. ✅ Continue local Laravel scaffold — **P2 core + P3 Employees/Departments/Security done**; plan PostgreSQL migration path next.  
 5. Do **not** start production feature build until contract award (except proposal assets / demos).  
-6. **Next build slice (post-award / continued demo):** P3 leftovers (dependents/history/Excel) or start P4 Leave scaffold APIs.
+6. **Next build slice (post-award / continued demo):** start **P4 Leave scaffold APIs** (types, credits, filing + workflow hooks).

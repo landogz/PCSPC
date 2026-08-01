@@ -8,14 +8,7 @@
     <div class="w-full max-w-md">
         <div class="bg-surface border border-border rounded-3xl shadow-xl shadow-black/5 p-6 sm:p-8">
             <a href="{{ url('/') }}" class="flex justify-center mb-6 sm:mb-8" aria-label="{{ config('app.name') }} home">
-                <img
-                    src="{{ asset('images/brand/pcspc-logo.png') }}"
-                    alt="{{ config('app.name') }}"
-                    width="650"
-                    height="200"
-                    decoding="async"
-                    class="pcspc-login-logo"
-                >
+                <x-brand.logo variant="compact" class="pcspc-login-logo !max-w-none" />
             </a>
 
             <h2 class="text-xl font-bold text-heading text-center">Welcome back</h2>
@@ -103,12 +96,12 @@
                                     type="button"
                                     class="w-full inline-flex items-center justify-between gap-2 h-11 px-3 rounded-xl border border-border text-sm hover:border-border-strong hover:bg-subtle transition-colors text-left"
                                     data-auto-login
-                                    data-login="mfa@pcspc.local"
+                                    data-login="{{ env('MFA_DEMO_EMAIL', 'mfa@pcspc.local') }}"
                                     data-password="Password1!"
                                     data-auto-mfa="1"
                                 >
                                     <span class="font-semibold text-heading">MFA Admin</span>
-                                    <span class="truncate text-xs text-muted">mfa@pcspc.local</span>
+                                    <span class="truncate text-xs text-muted">{{ env('MFA_DEMO_EMAIL', 'mfa@pcspc.local') }}</span>
                                 </button>
                             </div>
                             <p class="mt-2 text-xs text-warning">
@@ -120,7 +113,8 @@
 
                 <div id="mfa-step" class="hidden space-y-4">
                     <p class="text-sm text-muted">
-                        Enter the 6-digit authentication code for this sign-in.
+                        Enter the 6-digit code we emailed you
+                        <span class="font-medium text-heading" data-mfa-email></span>.
                     </p>
                     <div>
                         <label for="otp" class="block text-xs font-medium text-text-secondary mb-1.5">
@@ -147,6 +141,13 @@
                         class="w-full inline-flex items-center justify-center gap-1.5 h-11 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-strong transition-colors"
                     >
                         Verify &amp; continue
+                    </button>
+                    <button
+                        type="button"
+                        id="mfa-resend"
+                        class="w-full inline-flex items-center justify-center gap-1.5 h-11 rounded-xl border border-border text-sm font-medium text-text-secondary hover:border-border-strong hover:bg-subtle transition-colors"
+                    >
+                        Resend code
                     </button>
                     <button
                         type="button"

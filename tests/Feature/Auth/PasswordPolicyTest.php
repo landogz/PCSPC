@@ -24,7 +24,7 @@ class PasswordPolicyTest extends TestCase
         $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
 
         $this->actingAs($admin)
-            ->putJson('/api/v1/administration/password-policy', [
+            ->putJson('/api/v1/security/password-policy', [
                 'min_length' => 10,
                 'require_mixed_case' => true,
                 'require_numbers' => true,
@@ -101,7 +101,7 @@ class PasswordPolicyTest extends TestCase
 
         $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
         $this->actingAs($admin)
-            ->putJson('/api/v1/administration/password-policy', [
+            ->putJson('/api/v1/security/password-policy', [
                 'min_length' => 8,
                 'require_mixed_case' => true,
                 'require_numbers' => true,

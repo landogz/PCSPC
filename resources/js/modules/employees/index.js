@@ -1,10 +1,15 @@
 import http from '../../utils/http';
 import { setButtonLoading } from '../../utils/button-loading';
 import { toastSuccess, toastError, confirmAction } from '../../utils/toast';
-import { createServerTable, escapeHtml, rowActionsCell } from '../../utils/server-table';
+import { createServerTable, escapeHtml, rowActionsCell, cardActions } from '../../utils/server-table';
 import { openModal, closeModal } from '../../utils/modal';
 import { avatarInitial, avatarMarkup } from '../../utils/avatar';
+import { downloadBlob, filenameFromContentDisposition } from '../../utils/download';
 import { fillSidebarUser } from '../layout';
+import { initEmployeeDependents } from './dependents';
+import { initEmployeeEducations } from './education';
+import { initEmployeeEmploymentHistory } from './employment-history';
+import { initEmployeeFormTabsNav } from './form-tabs-nav';
 
 const FIELD_KEYS = [
     'employee_number',
@@ -124,7 +129,23 @@ export function initEmployeesModule() {
     const tempPasswordEl = form.querySelector('[data-temp-password]');
     const linkedUserEl = form.querySelector('[data-linked-user]');
     let editingId = null;
-    let meta = { departments: [], statuses: [] };
+    let meta = { departments: [], statuses: [], dependent_relationships: [], education_levels: [] };
+    let dependentsCount = 0;
+    let educationCount = 0;
+    let historyCount = 0;
+
+    function rowActionsFor(row) {
+        const actions = [{ key: 'view', label: canManage ? 'Edit' : 'View' }];
+        if (canManage) {
+            if (row.employment_status === 'active' || row.employment_status === 'on_leave') {
+                actions.push({ key: 'deactivate', label: 'Deactivate', danger: true });
+            }
+            if (!row.user) {
+                actions.push({ key: 'delete', label: 'Delete', danger: true });
+            }
+        }
+        return actions;
+    }
 
     const table = createServerTable({
         root: panel,
@@ -137,16 +158,7 @@ export function initEmployeesModule() {
             status: statusFilter?.value || '',
         }),
         mapRow: (row) => {
-            const actions = [{ key: 'view', label: canManage ? 'Edit' : 'View' }];
-            if (canManage) {
-                if (row.employment_status === 'active' || row.employment_status === 'on_leave') {
-                    actions.push({ key: 'deactivate', label: 'Deactivate', danger: true });
-                }
-                if (!row.user) {
-                    actions.push({ key: 'delete', label: 'Delete', danger: true });
-                }
-            }
-
+            const actions = rowActionsFor(row);
             const login = row.user
                 ? `<div class="text-sm text-heading">${escapeHtml(row.user.email)}</div>
                    <div class="text-[11px] text-muted">${row.user.is_active ? 'Active login' : 'Inactive login'}</div>`
@@ -175,6 +187,47 @@ export function initEmployeesModule() {
                     <td class="px-4 py-3">${login}</td>
                     ${rowActionsCell(actions)}
                 </tr>
+            `;
+        },
+        mapCard: (row) => {
+            const actions = rowActionsFor(row);
+            const login = row.user
+                ? `<p class="text-xs text-muted truncate">${escapeHtml(row.user.email)} · ${row.user.is_active ? 'Active login' : 'Inactive login'}</p>`
+                : '<p class="text-xs text-muted">Login not linked</p>';
+
+            return `
+                <article
+                    class="rounded-2xl border border-border bg-surface p-4 flex flex-col gap-3 hover:border-primary/30 transition-colors"
+                    data-row-id="${escapeHtml(row.id)}"
+                    data-actions='${JSON.stringify(actions)}'
+                >
+                    <div class="flex items-start gap-3">
+                        ${avatarMarkup({
+                            url: row.photo_url,
+                            name: row.full_name,
+                            sizeClass: 'w-12 h-12',
+                            textClass: 'text-sm',
+                        })}
+                        <div class="min-w-0 flex-1">
+                            <p class="font-semibold text-heading truncate">${escapeHtml(row.full_name)}</p>
+                            <p class="text-xs text-muted mt-0.5">${escapeHtml(row.employee_number)}</p>
+                            <p class="text-xs text-muted truncate">${escapeHtml(row.email || '')}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-1.5 text-sm">
+                        <p class="text-text-secondary truncate">
+                            <span class="text-muted">Dept:</span> ${escapeHtml(row.department?.name || '—')}
+                        </p>
+                        <p class="text-text-secondary truncate">
+                            <span class="text-muted">Position:</span> ${escapeHtml(row.position_title || '—')}
+                        </p>
+                        <div class="flex flex-wrap items-center gap-2">
+                            ${employmentBadge(row.employment_status)}
+                        </div>
+                        ${login}
+                    </div>
+                    ${cardActions(actions)}
+                </article>
             `;
         },
         onRowAction: async (action, row) => {
@@ -262,13 +315,36 @@ export function initEmployeesModule() {
         const statusSelect = form.employment_status;
         const currentStatus = statusSelect.value || 'active';
         statusSelect.innerHTML = '';
-        meta.statuses.forEach((status) => {
-            const option = document.createElement('option');
-            option.value = status;
-            option.textContent = status.replaceAll('_', ' ');
-            statusSelect.appendChild(option);
+        const statusOptions = meta.status_options?.length
+            ? meta.status_options
+            : (meta.statuses || []).map((status) => ({ code: status, label: status.replaceAll('_', ' ') }));
+        statusOptions.forEach((option) => {
+            const el = document.createElement('option');
+            el.value = option.code;
+            el.textContent = option.label;
+            statusSelect.appendChild(el);
         });
         statusSelect.value = currentStatus;
+
+        const fillOptionSelect = (select, options, { includeBlank = false, blankLabel = '— Select —' } = {}) => {
+            if (!select || !Array.isArray(options)) {
+                return;
+            }
+            const current = select.value;
+            select.innerHTML = includeBlank ? `<option value="">${blankLabel}</option>` : '';
+            options.forEach((option) => {
+                const el = document.createElement('option');
+                el.value = option.code;
+                el.textContent = option.label;
+                select.appendChild(el);
+            });
+            if ([...select.options].some((opt) => opt.value === current)) {
+                select.value = current;
+            }
+        };
+
+        fillOptionSelect(form.gender, meta.genders || [], { includeBlank: true });
+        fillOptionSelect(form.civil_status, meta.civil_statuses || [], { includeBlank: true });
 
         if (departmentFilter) {
             const current = departmentFilter.value;
@@ -285,11 +361,11 @@ export function initEmployeesModule() {
         if (statusFilter) {
             const current = statusFilter.value;
             statusFilter.innerHTML = '<option value="">All status</option>';
-            meta.statuses.forEach((status) => {
-                const option = document.createElement('option');
-                option.value = status;
-                option.textContent = status.replaceAll('_', ' ');
-                statusFilter.appendChild(option);
+            statusOptions.forEach((option) => {
+                const el = document.createElement('option');
+                el.value = option.code;
+                el.textContent = option.label;
+                statusFilter.appendChild(el);
             });
             statusFilter.value = current;
         }
@@ -325,12 +401,18 @@ export function initEmployeesModule() {
 
     const subtitle = modal.querySelector('[data-modal-subtitle]');
     const progressEl = form.querySelector('[data-form-progress]');
-    const TAB_KEYS = ['employment', 'personal', 'contact', 'documents'];
+    const tabsNav = initEmployeeFormTabsNav(form);
+    const TAB_KEYS = ['employment', 'personal', 'contact', 'documents', 'dependents', 'education', 'history', 'training', 'medical'];
     const TAB_FIELDS = {
         employment: ['first_name', 'middle_name', 'last_name', 'suffix', 'employee_number', 'department_id', 'position_title', 'employment_status', 'date_hired', 'date_regularized', 'date_separated'],
         personal: ['birth_date', 'gender', 'civil_status', 'nationality'],
         contact: ['email', 'mobile', 'address_line', 'city', 'province', 'zip_code'],
         documents: ['tin', 'sss_number', 'philhealth_number', 'pagibig_number'],
+        dependents: [],
+        education: [],
+        history: [],
+        training: [],
+        medical: [],
     };
     let activeTabKey = 'employment';
 
@@ -343,11 +425,43 @@ export function initEmployeesModule() {
             tab?.classList.toggle('is-active', active);
             tab?.setAttribute('aria-selected', active ? 'true' : 'false');
             panel?.classList.toggle('hidden', !active);
+            if (active && tab) {
+                const nav = form.querySelector('[data-employee-tabs]');
+                if (nav) {
+                    const navRect = nav.getBoundingClientRect();
+                    const tabRect = tab.getBoundingClientRect();
+                    const overflowed = tabRect.left < navRect.left + 8 || tabRect.right > navRect.right - 8;
+                    if (overflowed) {
+                        tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                        requestAnimationFrame(() => tabsNav.refresh());
+                    }
+                }
+            }
         });
         updateProgress();
+        tabsNav.refresh();
+        if (!editingId) {
+            return;
+        }
+        if (tabKey === 'dependents') {
+            dependents.reload();
+        } else if (tabKey === 'education') {
+            educations.reload();
+        } else if (tabKey === 'history') {
+            histories.reload();
+        }
     }
 
-    function sectionStarted(fields) {
+    function sectionStarted(fields, tabKey) {
+        if (tabKey === 'dependents') {
+            return dependentsCount > 0;
+        }
+        if (tabKey === 'education') {
+            return educationCount > 0;
+        }
+        if (tabKey === 'history') {
+            return historyCount > 0;
+        }
         return fields.some((key) => {
             const field = form.elements.namedItem(key);
             if (!field) {
@@ -364,7 +478,7 @@ export function initEmployeesModule() {
     }
 
     function updateProgress() {
-        const startedKeys = TAB_KEYS.filter((key) => sectionStarted(TAB_FIELDS[key]));
+        const startedKeys = TAB_KEYS.filter((key) => sectionStarted(TAB_FIELDS[key], key));
         const started = startedKeys.length;
         const requiredReady = ['first_name', 'last_name', 'employee_number', 'email', 'employment_status']
             .every((key) => String(form.elements.namedItem(key)?.value || '').trim() !== '');
@@ -386,6 +500,36 @@ export function initEmployeesModule() {
             seg.classList.toggle('is-current', current);
         });
     }
+
+    const dependents = initEmployeeDependents({
+        root: form,
+        getEmployeeId: () => editingId,
+        canManage,
+        onCountChange: (count) => {
+            dependentsCount = count;
+            updateProgress();
+        },
+    });
+
+    const educations = initEmployeeEducations({
+        root: form,
+        getEmployeeId: () => editingId,
+        canManage,
+        onCountChange: (count) => {
+            educationCount = count;
+            updateProgress();
+        },
+    });
+
+    const histories = initEmployeeEmploymentHistory({
+        root: form,
+        getEmployeeId: () => editingId,
+        canManage,
+        onCountChange: (count) => {
+            historyCount = count;
+            updateProgress();
+        },
+    });
 
     function refreshTabErrorBadges() {
         updateTabErrorBadges(form, TAB_KEYS, TAB_FIELDS);
@@ -462,6 +606,9 @@ export function initEmployeesModule() {
         form.querySelectorAll('[data-photo-trigger]').forEach((btn) => {
             btn.disabled = !canManage;
         });
+        dependents.reset();
+        educations.reset();
+        histories.reset();
         updateProgress();
     }
 
@@ -492,6 +639,7 @@ export function initEmployeesModule() {
         resetForm();
         setModalCopy('create');
         openModal(modal);
+        requestAnimationFrame(() => tabsNav.refresh());
     }
 
     async function openEdit(id) {
@@ -503,6 +651,12 @@ export function initEmployeesModule() {
             const { data } = await http.get(`/employees/${id}`);
             fillForm(data.data.employee);
             openModal(modal);
+            requestAnimationFrame(() => tabsNav.refresh());
+            await Promise.all([
+                dependents.reload(),
+                educations.reload(),
+                histories.reload(),
+            ]);
         } catch (error) {
             toastError(error.response?.data?.message || 'Unable to load employee');
         }
@@ -633,6 +787,55 @@ export function initEmployeesModule() {
 
     panel.querySelector('[data-action="create"]')?.addEventListener('click', openCreate);
 
+    panel.querySelector('[data-action="export"]')?.addEventListener('click', async (event) => {
+        const button = event.currentTarget;
+        setButtonLoading(button, true, 'Exporting…');
+        try {
+            const response = await http.get('/employees/export', {
+                params: {
+                    search: searchInput?.value?.trim() || '',
+                    department: departmentFilter?.value || '',
+                    status: statusFilter?.value || '',
+                },
+                responseType: 'blob',
+            });
+
+            const contentType = response.headers['content-type'] || '';
+            if (contentType.includes('application/json')) {
+                const text = await response.data.text();
+                const payload = JSON.parse(text);
+                throw new Error(payload.message || 'Unable to export employees');
+            }
+
+            const filename = filenameFromContentDisposition(
+                response.headers['content-disposition'],
+                `employees-${new Date().toISOString().slice(0, 10)}.xlsx`,
+            );
+            downloadBlob(
+                response.data,
+                filename,
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            );
+            toastSuccess('Employee Excel export downloaded');
+        } catch (error) {
+            let message = error.message || 'Unable to export employees';
+            const data = error.response?.data;
+            if (data instanceof Blob) {
+                try {
+                    const payload = JSON.parse(await data.text());
+                    message = payload.message || message;
+                } catch {
+                    // keep fallback message
+                }
+            } else if (error.response?.data?.message) {
+                message = error.response.data.message;
+            }
+            toastError(message);
+        } finally {
+            setButtonLoading(button, false);
+        }
+    });
+
     modal.querySelectorAll('[data-modal-dismiss]').forEach((el) => {
         el.addEventListener('click', () => closeModal(modal));
     });
@@ -688,6 +891,9 @@ export function initEmployeesModule() {
                 title.textContent = 'Edit employee';
                 showTempPassword(data.data.temporary_password);
                 form.querySelector('.overflow-y-auto')?.scrollTo({ top: 0 });
+                await dependents.reload();
+                await educations.reload();
+                await histories.reload();
             } else {
                 closeModal(modal);
             }
@@ -709,6 +915,12 @@ export function initEmployeesModule() {
             const { data } = await http.get('/employees/meta');
             meta = data.data || meta;
             populateMetaSelects();
+            dependents.setRelationships(meta.dependent_relationship_options || meta.dependent_relationships || []);
+            dependents.setGenders?.(meta.genders || []);
+            educations.setMeta({
+                levels: meta.education_levels || [],
+                level_options: meta.education_level_options || [],
+            });
             const statusFromUrl = new URLSearchParams(window.location.search).get('status');
             if (statusFromUrl && statusFilter && meta.statuses?.includes(statusFromUrl)) {
                 statusFilter.value = statusFromUrl;

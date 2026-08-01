@@ -46,7 +46,9 @@ function initLoginPage() {
     const mfaStep = document.getElementById('mfa-step');
     const loginSubmit = document.getElementById('login-submit');
     const mfaSubmit = document.getElementById('mfa-submit');
+    const mfaResend = document.getElementById('mfa-resend');
     const mfaBack = document.getElementById('mfa-back');
+    const mfaEmailEl = document.querySelector('[data-mfa-email]');
 
     let mfaToken = null;
 
@@ -54,13 +56,19 @@ function initLoginPage() {
         mfaToken = null;
         loginStep.classList.remove('hidden');
         mfaStep.classList.add('hidden');
+        if (mfaEmailEl) {
+            mfaEmailEl.textContent = '';
+        }
         clearErrors(form);
     };
 
-    const showMfaStep = (token) => {
+    const showMfaStep = (token, otpSentTo = '') => {
         mfaToken = token;
         loginStep.classList.add('hidden');
         mfaStep.classList.remove('hidden');
+        if (mfaEmailEl) {
+            mfaEmailEl.textContent = otpSentTo ? `(${otpSentTo})` : '';
+        }
         clearErrors(form);
         document.getElementById('otp')?.focus();
     };
@@ -88,8 +96,8 @@ function initLoginPage() {
             const { data } = await http.post('/auth/login', { login, password });
 
             if (data?.data?.mfa_required) {
-                showMfaStep(data.data.mfa_token);
-                toastSuccess(data.message || 'MFA required');
+                showMfaStep(data.data.mfa_token, data.data.otp_sent_to || '');
+                toastSuccess(data.message || 'Check your email for the sign-in code');
 
                 if (data.data.debug_otp) {
                     console.info('[PCSPC MFA debug OTP]', data.data.debug_otp);
@@ -154,6 +162,46 @@ function initLoginPage() {
 
     mfaSubmit?.addEventListener('click', async () => {
         await verifyMfaCode(mfaToken, form.otp.value, mfaSubmit);
+    });
+
+    mfaResend?.addEventListener('click', async () => {
+        if (!mfaToken) {
+            toastError('Sign in again to request a new code.');
+            return;
+        }
+
+        clearErrors(form);
+        setButtonLoading(mfaResend, true, 'Sending…');
+
+        try {
+            await ensureCsrfCookie();
+            const { data } = await http.post('/auth/mfa/resend', {
+                mfa_token: mfaToken,
+            });
+
+            mfaToken = data?.data?.mfa_token || mfaToken;
+            if (mfaEmailEl) {
+                mfaEmailEl.textContent = data?.data?.otp_sent_to
+                    ? `(${data.data.otp_sent_to})`
+                    : mfaEmailEl.textContent;
+            }
+
+            if (data?.data?.debug_otp) {
+                console.info('[PCSPC MFA debug OTP]', data.data.debug_otp);
+                form.otp.value = data.data.debug_otp;
+            } else {
+                form.otp.value = '';
+            }
+
+            toastSuccess(data.message || 'A new code was sent to your email');
+            document.getElementById('otp')?.focus();
+        } catch (error) {
+            const response = error.response?.data;
+            showErrors(form, response?.errors || {});
+            toastError(response?.message || 'Unable to resend code');
+        } finally {
+            setButtonLoading(mfaResend, false);
+        }
     });
 
     mfaBack?.addEventListener('click', showLoginStep);

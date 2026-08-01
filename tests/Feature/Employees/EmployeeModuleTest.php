@@ -21,6 +21,35 @@ class EmployeeModuleTest extends TestCase
         $this->seed(AuthSeeder::class);
     }
 
+    public function test_admin_can_export_employees_excel(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
+
+        $response = $this->actingAs($admin)
+            ->get('/api/v1/employees/export')
+            ->assertOk();
+
+        $this->assertStringContainsString(
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            (string) $response->headers->get('content-type'),
+        );
+        $this->assertStringContainsString('.xlsx', (string) $response->headers->get('content-disposition'));
+        $this->assertTrue(AuthActivityLog::query()->where('event', 'employee.exported')->exists());
+
+        $content = $response->streamedContent();
+        $this->assertNotEmpty($content);
+        $this->assertSame('PK', substr($content, 0, 2));
+    }
+
+    public function test_employee_cannot_export_employees(): void
+    {
+        $employee = User::query()->where('email', 'employee@pcspc.local')->firstOrFail();
+
+        $this->actingAs($employee)
+            ->get('/api/v1/employees/export')
+            ->assertStatus(403);
+    }
+
     public function test_create_validation_uses_human_error_copy(): void
     {
         $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();

@@ -8,14 +8,7 @@
     <div class="w-full max-w-md">
         <div class="bg-surface border border-border rounded-3xl shadow-xl shadow-black/5 p-6 sm:p-8">
             <a href="{{ url('/') }}" class="flex justify-center mb-6 sm:mb-8" aria-label="{{ config('app.name') }} home">
-                <img
-                    src="{{ asset('images/brand/pcspc-logo.png') }}"
-                    alt="{{ config('app.name') }}"
-                    width="650"
-                    height="200"
-                    decoding="async"
-                    class="pcspc-login-logo"
-                >
+                <x-brand.logo variant="compact" class="pcspc-login-logo !max-w-none" />
             </a>
 
             <h2 class="text-xl font-bold text-heading text-center">Change your password</h2>

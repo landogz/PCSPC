@@ -14,20 +14,20 @@
     <x-ui.data-panel id="audit-logs" title="Auth & security events">
         <x-slot:subtitle>Filter login, MFA, lockout, and related activity.</x-slot:subtitle>
         <x-slot:filters>
-            <div class="relative min-w-[180px] flex-1 sm:flex-none">
-                <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
+            <div class="relative w-full sm:col-span-2 lg:w-52 lg:flex-none">
+                <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"></i>
                 <input
                     type="search"
                     data-filter="search"
                     placeholder="Search email, IP…"
-                    class="w-full sm:w-56 h-10 pl-9 pr-3 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    class="w-full h-10 min-h-[44px] sm:min-h-10 pl-9 pr-3 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 >
             </div>
-            <select data-filter="event" class="h-10 px-3 rounded-xl border border-border bg-surface text-sm min-w-[140px]">
+            <select data-filter="event" class="w-full lg:w-40 h-10 min-h-[44px] sm:min-h-10 px-3 rounded-xl border border-border bg-surface text-sm">
                 <option value="">All events</option>
             </select>
-            <input type="date" data-filter="from" class="h-10 px-3 rounded-xl border border-border bg-surface text-sm">
-            <input type="date" data-filter="to" class="h-10 px-3 rounded-xl border border-border bg-surface text-sm">
+            <input type="date" data-filter="from" aria-label="From date" class="w-full lg:w-36 h-10 min-h-[44px] sm:min-h-10 px-3 rounded-xl border border-border bg-surface text-sm">
+            <input type="date" data-filter="to" aria-label="To date" class="w-full lg:w-36 h-10 min-h-[44px] sm:min-h-10 px-3 rounded-xl border border-border bg-surface text-sm">
         </x-slot:filters>
 
         <x-slot:head>

@@ -1,8 +1,10 @@
 /**
- * medical module (SPA)
- * See config/navigation.php and docs/MODULES.md
- * Future: Axios + DataTables against /api/v1/medical
+ * Medical module (SPA stub — EMP-006 / MED-001).
+ * Full Axios + DataTables CRUD lands in Phase 6.
  */
 export function initMedicalModule() {
-    // Scaffold only — feature APIs land with the mapped phase.
+    const root = document.querySelector('[data-module="medical"]');
+    if (!root) {
+        return;
+    }
 }

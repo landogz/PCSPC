@@ -58,6 +58,8 @@ class PlatformModulesTest extends TestCase
         $this->actingAs($admin)
             ->postJson('/api/v1/security/users', [
                 'employee_id' => $employee->uuid,
+                'name' => 'New Staff',
+                'email' => 'newstaff@pcspc.local',
                 'password' => 'Password1!',
                 'role_ids' => [$role->uuid],
                 'is_active' => true,
@@ -80,6 +82,56 @@ class PlatformModulesTest extends TestCase
         );
     }
 
+    public function test_admin_can_update_linked_user_email_and_sync_employee(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
+        $target = User::query()->where('email', 'employee@pcspc.local')->firstOrFail();
+        $employee = $target->employee;
+        $this->assertNotNull($employee);
+
+        $this->actingAs($admin)
+            ->putJson("/api/v1/security/users/{$target->uuid}", [
+                'name' => $target->name,
+                'email' => 'employee.updated@pcspc.local',
+                'is_active' => true,
+                'mfa_enabled' => false,
+                'role_ids' => $target->roles()->pluck('uuid')->all(),
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.user.email', 'employee.updated@pcspc.local');
+
+        $this->assertSame('employee.updated@pcspc.local', $target->fresh()->email);
+        $this->assertSame('employee.updated@pcspc.local', $employee->fresh()->email);
+    }
+
+    public function test_admin_can_override_email_when_creating_user_from_employee(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
+        $role = Role::query()->where('slug', 'employee')->firstOrFail();
+
+        $employee = \App\Models\Employee::query()->create([
+            'employee_number' => 'EMP-3002',
+            'first_name' => 'Override',
+            'last_name' => 'Email',
+            'email' => 'old.override@pcspc.local',
+            'employment_status' => 'active',
+        ]);
+
+        $this->actingAs($admin)
+            ->postJson('/api/v1/security/users', [
+                'employee_id' => $employee->uuid,
+                'name' => 'Override Email',
+                'email' => 'new.override@pcspc.local',
+                'password' => 'Password1!',
+                'role_ids' => [$role->uuid],
+                'is_active' => true,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.user.email', 'new.override@pcspc.local');
+
+        $this->assertSame('new.override@pcspc.local', $employee->fresh()->email);
+    }
+
     public function test_cannot_create_duplicate_account_for_linked_employee(): void
     {
         $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
@@ -89,6 +141,8 @@ class PlatformModulesTest extends TestCase
         $this->actingAs($admin)
             ->postJson('/api/v1/security/users', [
                 'employee_id' => $employee->uuid,
+                'name' => $employee->fullName(),
+                'email' => $employee->email,
                 'password' => 'Password1!',
                 'role_ids' => [$role->uuid],
             ])

@@ -20,6 +20,14 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'employee_id' => ['required', 'uuid', Rule::exists('employees', 'uuid')],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email'),
+                Rule::unique('employees', 'email')->ignore($this->input('employee_id'), 'uuid'),
+            ],
             'password' => ['required', 'string', Password::defaults()],
             'is_active' => ['sometimes', 'boolean'],
             'mfa_enabled' => ['sometimes', 'boolean'],

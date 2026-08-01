@@ -4,6 +4,7 @@ import { toastSuccess, toastError, confirmAction } from '../../utils/toast';
 import { createServerTable, escapeHtml, statusBadge, lockedBadge, rowActionsCell } from '../../utils/server-table';
 import { openModal, closeModal } from '../../utils/modal';
 import { avatarMarkup } from '../../utils/avatar';
+import { initEmployeeSearch } from '../../utils/employee-search';
 
 function clearErrors(form) {
     form.querySelectorAll('[data-error]').forEach((el) => {
@@ -68,15 +69,47 @@ function initUsersPanel(root) {
     const statusSelect = panel.querySelector('[data-filter="status"]');
     const roleInput = form.elements.namedItem('role_id');
     const employeePicker = form.querySelector('[data-employee-picker]');
-    const employeeSearch = form.querySelector('[data-employee-search]');
-    const employeeResults = form.querySelector('[data-employee-results]');
     const duplicateBanner = form.querySelector('[data-duplicate-banner]');
     const title = modal.querySelector('[data-modal-title]');
     const passwordHint = form.querySelector('[data-password-hint]');
     let editingId = null;
     let availableRoles = [];
     let selectedEmployee = null;
-    let employeeSearchTimer = null;
+
+    const employeeSearchControl = initEmployeeSearch(form.querySelector('[data-employee-search-root]'), {
+        endpoint: '/employees/search',
+        isOptionDisabled: () => false,
+        optionBadge: (employee) => (
+            employee.has_account
+                ? '<span class="flex-shrink-0 text-[10px] font-semibold uppercase text-danger">Has login</span>'
+                : ''
+        ),
+        onSelect: (employee) => {
+            selectedEmployee = employee;
+            form.name.value = employee.full_name || '';
+            form.email.value = employee.email || '';
+            form.employee_number.value = employee.employee_number || '';
+            setProfileFieldsLocked(false);
+            setEmailHint('Editable — saving also updates the Employee 201 email.');
+            duplicateBanner?.classList.toggle('hidden', !employee.has_account);
+            clearErrors(form);
+            if (employee.has_account) {
+                showErrors(form, { employee_id: ['This employee already has a user account.'] });
+                toastError('This employee already has a user account.');
+            }
+        },
+        onClear: () => {
+            selectedEmployee = null;
+            if (!editingId) {
+                form.name.value = '';
+                form.email.value = '';
+                form.employee_number.value = '';
+                setProfileFieldsLocked(true);
+                setEmailHint('Select an employee first, then you can adjust the login email.');
+                duplicateBanner?.classList.add('hidden');
+            }
+        },
+    });
 
     function primaryRoleId(roles = []) {
         const order = ['super-admin', 'hr-admin', 'employee'];
@@ -94,84 +127,29 @@ function initUsersPanel(root) {
         form.name.disabled = locked;
         form.email.disabled = locked;
         form.employee_number.disabled = true;
+
+        [form.name, form.email].forEach((input) => {
+            if (!input) {
+                return;
+            }
+            input.classList.toggle('bg-subtle', locked);
+            input.classList.toggle('text-muted', locked);
+            input.classList.toggle('cursor-not-allowed', locked);
+            input.classList.toggle('bg-surface', !locked);
+        });
+    }
+
+    function setEmailHint(text) {
+        const hint = form.querySelector('[data-email-hint]');
+        if (hint) {
+            hint.textContent = text;
+        }
     }
 
     function clearEmployeeSelection() {
         selectedEmployee = null;
-        form.employee_id.value = '';
-        if (employeeSearch) {
-            employeeSearch.value = '';
-        }
-        employeeResults?.classList.add('hidden');
-        employeeResults && (employeeResults.innerHTML = '');
+        employeeSearchControl?.clear();
         duplicateBanner?.classList.add('hidden');
-    }
-
-    function applyEmployeeSelection(employee) {
-        selectedEmployee = employee;
-        form.employee_id.value = employee.id;
-        form.name.value = employee.full_name || '';
-        form.email.value = employee.email || '';
-        form.employee_number.value = employee.employee_number || '';
-        if (employeeSearch) {
-            employeeSearch.value = employee.label || `${employee.employee_number} — ${employee.full_name}`;
-        }
-        employeeResults?.classList.add('hidden');
-        setProfileFieldsLocked(true);
-        duplicateBanner?.classList.toggle('hidden', !employee.has_account);
-        clearErrors(form);
-        if (employee.has_account) {
-            showErrors(form, { employee_id: ['This employee already has a user account.'] });
-        }
-    }
-
-    function renderEmployeeResults(items = []) {
-        if (!employeeResults) {
-            return;
-        }
-        if (!items.length) {
-            employeeResults.innerHTML = '<div class="px-3 py-2.5 text-sm text-muted">No employees found.</div>';
-            employeeResults.classList.remove('hidden');
-            return;
-        }
-
-        employeeResults.innerHTML = items.map((item) => {
-            const disabled = item.has_account;
-            const payload = encodeURIComponent(JSON.stringify(item));
-            return `
-                <button
-                    type="button"
-                    data-employee-option
-                    data-employee-json="${payload}"
-                    class="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-subtle ${disabled ? 'opacity-60 cursor-not-allowed' : ''}"
-                >
-                    ${avatarMarkup({
-                        url: item.photo_url,
-                        name: item.full_name,
-                        email: item.email,
-                        sizeClass: 'w-8 h-8',
-                        textClass: 'text-xs',
-                    })}
-                    <div class="min-w-0 flex-1">
-                        <div class="font-medium text-heading truncate">${escapeHtml(item.full_name || '—')}</div>
-                        <div class="text-xs text-muted truncate">${escapeHtml(item.employee_number || '—')} · ${escapeHtml(item.email || 'No email')}</div>
-                    </div>
-                    ${disabled ? '<span class="flex-shrink-0 text-[10px] font-semibold uppercase text-danger">Has login</span>' : ''}
-                </button>
-            `;
-        }).join('');
-        employeeResults.classList.remove('hidden');
-    }
-
-    async function searchEmployees(query) {
-        try {
-            const { data } = await http.get('/security/employees/search', {
-                params: { search: query || '' },
-            });
-            renderEmployeeResults(data?.data?.items || []);
-        } catch (error) {
-            toastError(error.response?.data?.message || 'Unable to search employees');
-        }
     }
 
     const table = createServerTable({
@@ -340,6 +318,7 @@ function initUsersPanel(root) {
         if (empHint) {
             empHint.textContent = 'Synced from the selected employee.';
         }
+        setEmailHint('Select an employee first, then you can adjust the login email.');
     }
 
     function openCreate() {
@@ -350,11 +329,12 @@ function initUsersPanel(root) {
         employeePicker?.classList.remove('hidden');
         form.querySelector('[data-employee-number-field]')?.classList.remove('hidden');
         setProfileFieldsLocked(true);
+        setEmailHint('Select an employee first, then you can adjust the login email.');
         form.name.value = '';
         form.email.value = '';
         form.employee_number.value = '';
         openModal(modal);
-        employeeSearch?.focus();
+        employeeSearchControl?.focus();
     }
 
     function openEdit(row) {
@@ -392,6 +372,11 @@ function initUsersPanel(root) {
                 ? 'Synced from Employees 201 — edit it there.'
                 : 'No employee # linked to this login.';
         }
+        setEmailHint(
+            row.employee_number
+                ? 'Editable — saving also updates the linked Employee 201 email.'
+                : 'Login email for this account.',
+        );
 
         if (row.is_locked) {
             form.querySelector('[data-lock-banner]')?.classList.remove('hidden');
@@ -409,48 +394,6 @@ function initUsersPanel(root) {
     panel.querySelector('[data-action="create"]')?.addEventListener('click', openCreate);
     modal.querySelectorAll('[data-modal-dismiss]').forEach((el) => {
         el.addEventListener('click', () => closeModal(modal));
-    });
-
-    employeeSearch?.addEventListener('input', () => {
-        selectedEmployee = null;
-        form.employee_id.value = '';
-        form.name.value = '';
-        form.email.value = '';
-        form.employee_number.value = '';
-        duplicateBanner?.classList.add('hidden');
-        clearTimeout(employeeSearchTimer);
-        employeeSearchTimer = setTimeout(() => {
-            searchEmployees(employeeSearch.value.trim());
-        }, 250);
-    });
-
-    employeeSearch?.addEventListener('focus', () => {
-        if (!editingId) {
-            searchEmployees(employeeSearch.value.trim());
-        }
-    });
-
-    employeeResults?.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-employee-option]');
-        if (!button) {
-            return;
-        }
-        let employee;
-        try {
-            employee = JSON.parse(decodeURIComponent(button.getAttribute('data-employee-json') || '{}'));
-        } catch {
-            return;
-        }
-        applyEmployeeSelection(employee);
-        if (employee.has_account) {
-            toastError('This employee already has a user account.');
-        }
-    });
-
-    document.addEventListener('click', (event) => {
-        if (!employeePicker?.contains(event.target)) {
-            employeeResults?.classList.add('hidden');
-        }
     });
 
     let searchTimer = null;
@@ -487,7 +430,8 @@ function initUsersPanel(root) {
                 payload.password = form.password.value;
             }
         } else {
-            if (!form.employee_id.value) {
+            const employeeId = employeeSearchControl?.getValue() || form.querySelector('[data-employee-id]')?.value || '';
+            if (!employeeId) {
                 showErrors(form, { employee_id: ['Please select an employee.'] });
                 return;
             }
@@ -501,7 +445,9 @@ function initUsersPanel(root) {
                 return;
             }
             payload = {
-                employee_id: form.employee_id.value,
+                employee_id: employeeId,
+                name: form.name.value.trim(),
+                email: form.email.value.trim(),
                 password: form.password.value,
                 is_active: form.is_active.checked,
                 mfa_enabled: form.mfa_enabled.checked,
@@ -740,6 +686,70 @@ function initRolesPanel(root) {
     loadPermissions().then(() => table.reload(true));
 }
 
+function fillPasswordPolicyForm(form, policy) {
+    form.min_length.value = policy.min_length ?? 8;
+    form.expire_days.value = policy.expire_days ?? 90;
+    form.history_count.value = policy.history_count ?? 5;
+    form.require_mixed_case.checked = Boolean(policy.require_mixed_case);
+    form.require_numbers.checked = Boolean(policy.require_numbers);
+    form.require_symbols.checked = Boolean(policy.require_symbols);
+    form.uncompromised.checked = Boolean(policy.uncompromised);
+    form.force_change_temporary.checked = Boolean(policy.force_change_temporary);
+
+    const hint = form.closest('[data-spa-module="password-policy"]')?.querySelector('[data-policy-hint]');
+    if (hint) {
+        hint.textContent = policy.hint || '';
+    }
+}
+
+function readPasswordPolicyForm(form) {
+    return {
+        min_length: Number(form.min_length.value),
+        expire_days: Number(form.expire_days.value),
+        history_count: Number(form.history_count.value),
+        require_mixed_case: form.require_mixed_case.checked,
+        require_numbers: form.require_numbers.checked,
+        require_symbols: form.require_symbols.checked,
+        uncompromised: form.uncompromised.checked,
+        force_change_temporary: form.force_change_temporary.checked,
+    };
+}
+
+function initPasswordPolicyPanel(root) {
+    const panel = root.querySelector('[data-spa-module="password-policy"]');
+    const form = document.getElementById('password-policy-form');
+    const saveBtn = panel?.querySelector('[data-save-policy]');
+    if (!panel || !form || !saveBtn) {
+        return;
+    }
+
+    (async () => {
+        try {
+            const { data } = await http.get('/security/password-policy');
+            fillPasswordPolicyForm(form, data?.data?.policy || {});
+        } catch (error) {
+            toastError(error.response?.data?.message || 'Unable to load password policy');
+        }
+    })();
+
+    saveBtn.addEventListener('click', async () => {
+        clearErrors(form);
+        setButtonLoading(saveBtn, true, 'Saving…');
+
+        try {
+            const { data } = await http.put('/security/password-policy', readPasswordPolicyForm(form));
+            fillPasswordPolicyForm(form, data?.data?.policy || {});
+            toastSuccess(data.message || 'Password policy updated');
+        } catch (error) {
+            const response = error.response?.data;
+            showErrors(form, response?.errors || {});
+            toastError(response?.message || 'Unable to save password policy');
+        } finally {
+            setButtonLoading(saveBtn, false);
+        }
+    });
+}
+
 export function initSecurityModule() {
     const root = document.querySelector('[data-module="security"]');
     if (!root) {
@@ -754,5 +764,9 @@ export function initSecurityModule() {
 
     if (root.dataset.canRoles === '1') {
         initRolesPanel(root);
+    }
+
+    if (root.dataset.canPasswordPolicy === '1') {
+        initPasswordPolicyPanel(root);
     }
 }

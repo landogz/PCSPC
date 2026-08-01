@@ -4,6 +4,12 @@
 ])
 
 @php
+    $brand = app(\App\Services\Administration\SystemParameterService::class)->current();
+    $logoUrl = $brand['logo_url'];
+    $alt = $brand['company_name'] !== ''
+        ? $brand['company_name']
+        : 'Philippine Coastal Storage & Pipeline Corporation';
+
     $max = match ($variant) {
         'compact' => 'max-w-[10rem] sm:max-w-[11rem]',
         'sidebar' => 'max-w-[9.5rem]',
@@ -12,8 +18,9 @@
 @endphp
 
 <img
-    src="{{ asset('images/brand/pcspc-logo.png') }}"
-    alt="Philippine Coastal Storage &amp; Pipeline Corporation"
+    data-brand-logo
+    src="{{ $logoUrl }}"
+    alt="{{ $alt }}"
     width="650"
     height="200"
     decoding="async"

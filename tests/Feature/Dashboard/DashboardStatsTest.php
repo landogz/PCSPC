@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Dashboard;
 
+use App\Models\AuthActivityLog;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\User;
@@ -38,6 +39,17 @@ class DashboardStatsTest extends TestCase
                     'departments' => ['value', 'delta_percent'],
                     'attendance' => ['value', 'available'],
                     'summary' => ['check_ins', 'on_leave', 'late_arrivals'],
+                    'headcount_movement' => ['hires_this_month', 'separations_this_month', 'net_this_month'],
+                    'charts' => [
+                        'attendance_trend',
+                        'attendance_today',
+                        'leave_by_month',
+                        'department_headcount',
+                        'headcount_trend',
+                    ],
+                    'pending' => ['total_actionable', 'items', 'incomplete_profiles'],
+                    'on_leave_now' => ['available', 'count', 'items'],
+                    'activity' => ['items'],
                 ],
             ]);
 
@@ -58,7 +70,92 @@ class DashboardStatsTest extends TestCase
             $departments,
         );
         $this->assertFalse($response->json('data.attendance.available'));
+        $this->assertFalse($response->json('data.charts.attendance_trend.available'));
+        $this->assertFalse($response->json('data.charts.leave_by_month.available'));
+        $this->assertTrue($response->json('data.charts.department_headcount.available'));
+        $this->assertTrue($response->json('data.charts.headcount_trend.available'));
         $this->assertSame($onLeave, (int) $response->json('data.summary.on_leave'));
+        $this->assertSame($onLeave, (int) $response->json('data.on_leave_now.count'));
+        $this->assertCount(12, $response->json('data.charts.headcount_trend.labels'));
+    }
+
+    public function test_dashboard_includes_department_headcount_and_incomplete_profiles(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
+        $department = Department::query()->where('is_active', true)->firstOrFail();
+
+        Employee::query()->create([
+            'employee_number' => 'EMP-DASH-01',
+            'first_name' => 'Dash',
+            'last_name' => 'Incomplete',
+            'email' => 'dash.incomplete@pcspc.local',
+            'employment_status' => 'active',
+            'department_id' => null,
+            'date_hired' => null,
+            'birth_date' => null,
+            'mobile' => null,
+        ]);
+
+        Employee::query()->create([
+            'employee_number' => 'EMP-DASH-02',
+            'first_name' => 'Dash',
+            'last_name' => 'Assigned',
+            'email' => 'dash.assigned@pcspc.local',
+            'employment_status' => 'active',
+            'department_id' => $department->id,
+            'date_hired' => now()->toDateString(),
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->getJson('/api/v1/dashboard/stats')
+            ->assertOk();
+
+        $labels = $response->json('data.charts.department_headcount.labels');
+        $this->assertContains($department->name, $labels);
+        $this->assertGreaterThanOrEqual(1, (int) $response->json('data.pending.incomplete_profiles.count'));
+        $this->assertGreaterThanOrEqual(1, (int) $response->json('data.pending.total_actionable'));
+    }
+
+    public function test_dashboard_headcount_movement_counts_hires_this_month(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
+
+        Employee::query()->create([
+            'employee_number' => 'EMP-HIRE-01',
+            'first_name' => 'New',
+            'last_name' => 'Hire',
+            'email' => 'new.hire@pcspc.local',
+            'employment_status' => 'active',
+            'date_hired' => now()->toDateString(),
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson('/api/v1/dashboard/stats')
+            ->assertOk()
+            ->assertJsonPath('data.headcount_movement.hires_this_month', 1);
+    }
+
+    public function test_dashboard_includes_recent_activity_items(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
+
+        AuthActivityLog::query()->create([
+            'user_id' => $admin->id,
+            'email' => $admin->email,
+            'event' => 'employee.created',
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'PHPUnit',
+            'meta' => ['name' => 'Sample Employee', 'employee_number' => 'EMP-ACT'],
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->getJson('/api/v1/dashboard/stats')
+            ->assertOk();
+
+        $messages = collect($response->json('data.activity.items'))->pluck('message')->all();
+        $this->assertTrue(
+            collect($messages)->contains(fn (string $message): bool => str_contains($message, 'Employee')),
+        );
     }
 
     public function test_guest_cannot_load_dashboard_stats(): void

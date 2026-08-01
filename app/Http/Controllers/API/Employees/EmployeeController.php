@@ -10,6 +10,7 @@ use App\Services\Employees\EmployeeService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EmployeeController extends Controller
 {
@@ -20,6 +21,18 @@ class EmployeeController extends Controller
     public function meta(): JsonResponse
     {
         return ApiResponse::success('Employee meta retrieved.', $this->employees->meta());
+    }
+
+    public function search(Request $request): JsonResponse
+    {
+        $items = $this->employees->searchLookup(
+            (string) $request->query('search', ''),
+            min(max((int) $request->integer('limit', 15), 1), 30),
+        );
+
+        return ApiResponse::success('Employees found.', [
+            'items' => $items,
+        ]);
     }
 
     public function index(Request $request): JsonResponse
@@ -46,6 +59,22 @@ class EmployeeController extends Controller
                 'total' => $paginator->total(),
             ],
             'can_manage' => $reveal,
+        ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $reveal = $request->user()?->hasPermission('employees.manage') ?? false;
+        $result = $this->employees->export([
+            'search' => (string) $request->query('search', ''),
+            'status' => (string) $request->query('status', ''),
+            'department' => (string) $request->query('department', ''),
+        ], $reveal);
+
+        return response()->streamDownload(function () use ($result): void {
+            echo $result['binary'];
+        }, $result['filename'], [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
     }
 

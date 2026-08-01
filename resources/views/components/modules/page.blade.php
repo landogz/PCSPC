@@ -12,7 +12,7 @@
     $section = $module['section'] ?? '';
 @endphp
 
-<section class="space-y-4 md:space-y-5">
+<section class="space-y-4 md:space-y-5" @if ($moduleKey !== '') data-module="{{ $moduleKey }}" @endif>
     <div class="bg-surface border border-border rounded-2xl p-5 md:p-6 relative overflow-hidden">
         <div class="pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary/10"></div>
         <div class="pointer-events-none absolute bottom-0 right-20 w-24 h-24 rounded-full bg-primary/5"></div>

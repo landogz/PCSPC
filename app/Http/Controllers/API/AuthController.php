@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\ResendMfaRequest;
 use App\Http\Requests\Auth\VerifyMfaRequest;
 use App\Http\Resources\UserResource;
 use App\Services\Administration\PasswordPolicyService;
@@ -38,6 +39,17 @@ class AuthController extends Controller
         $result = $this->authService->verifyMfa(
             mfaToken: (string) $request->validated('mfa_token'),
             otp: (string) $request->validated('otp'),
+            ip: $request->ip(),
+            userAgent: $request->userAgent(),
+        );
+
+        return ApiResponse::success($result['message'], $result['data'], $result['http']);
+    }
+
+    public function resendMfa(ResendMfaRequest $request): JsonResponse
+    {
+        $result = $this->authService->resendMfa(
+            mfaToken: (string) $request->validated('mfa_token'),
             ip: $request->ip(),
             userAgent: $request->userAgent(),
         );

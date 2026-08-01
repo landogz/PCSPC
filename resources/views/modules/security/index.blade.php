@@ -6,7 +6,8 @@
 @php
     $canUsers = auth()->user()?->hasPermission('users.manage') ?? false;
     $canRoles = auth()->user()?->hasPermission('roles.manage') ?? false;
-    $defaultTab = $canUsers ? 'users' : ($canRoles ? 'roles' : 'users');
+    $canPasswordPolicy = $canUsers;
+    $defaultTab = $canUsers ? 'users' : ($canRoles ? 'roles' : ($canPasswordPolicy ? 'password-policy' : 'users'));
 @endphp
 
 @section('content')
@@ -15,6 +16,7 @@
     data-module="security"
     data-can-users="{{ $canUsers ? '1' : '0' }}"
     data-can-roles="{{ $canRoles ? '1' : '0' }}"
+    data-can-password-policy="{{ $canPasswordPolicy ? '1' : '0' }}"
 >
     <div class="bg-surface border border-border rounded-2xl p-5 md:p-6">
         <p class="text-xs font-bold tracking-wide text-faint uppercase">{{ $module['section'] ?? 'System' }}</p>
@@ -40,6 +42,15 @@
                     Roles &amp; permissions
                 </button>
             @endif
+            @if ($canPasswordPolicy)
+                <button
+                    type="button"
+                    data-security-tab="password-policy"
+                    class="security-tab h-10 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors {{ $defaultTab === 'password-policy' ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-heading' }}"
+                >
+                    Password policy
+                </button>
+            @endif
         </div>
     </div>
 
@@ -48,22 +59,22 @@
             <x-ui.data-panel id="security-users" title="User accounts" create-label="Add user">
                 <x-slot:subtitle>Manage access, roles, MFA flags, and unlock locked accounts.</x-slot:subtitle>
                 <x-slot:filters>
-                    <div class="relative min-w-[180px] flex-1 sm:flex-none">
-                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
+                    <div class="relative w-full sm:col-span-2 lg:w-52 lg:flex-none">
+                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"></i>
                         <input
                             type="search"
                             data-filter="search"
                             placeholder="Search users…"
-                            class="w-full sm:w-56 h-10 pl-9 pr-3 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            class="w-full h-10 min-h-[44px] sm:min-h-10 pl-9 pr-3 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                         >
                     </div>
-                    <select data-filter="status" class="h-10 px-3 rounded-xl border border-border bg-surface text-sm min-w-[120px]">
+                    <select data-filter="status" class="w-full lg:w-36 h-10 min-h-[44px] sm:min-h-10 px-3 rounded-xl border border-border bg-surface text-sm">
                         <option value="">All status</option>
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                         <option value="locked">Locked</option>
                     </select>
-                    <select data-filter="role" class="h-10 px-3 rounded-xl border border-border bg-surface text-sm min-w-[140px]">
+                    <select data-filter="role" class="w-full lg:w-40 h-10 min-h-[44px] sm:min-h-10 px-3 rounded-xl border border-border bg-surface text-sm">
                         <option value="">All roles</option>
                     </select>
                 </x-slot:filters>
@@ -86,7 +97,6 @@
                         <form id="security-user-form" class="flex min-h-0 flex-1 flex-col" novalidate>
                             <div class="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-5">
                                 <input type="hidden" name="id" value="">
-                                <input type="hidden" name="employee_id" value="">
                                 <div data-lock-banner class="hidden rounded-xl border border-warning/40 bg-warning-soft px-3 py-2.5 text-sm text-heading">
                                     <div class="flex items-start gap-2">
                                         <i class="ph ph-lock-key text-lg flex-shrink-0 mt-0.5"></i>
@@ -96,27 +106,18 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div data-employee-picker class="hidden space-y-2">
-                                    <label class="block text-sm font-medium text-heading mb-1.5">Employee</label>
-                                    <div class="relative">
-                                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
-                                        <input
-                                            type="search"
-                                            data-employee-search
-                                            autocomplete="off"
-                                            placeholder="Search by name or employee #…"
-                                            class="w-full h-11 pl-9 pr-3 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                        >
-                                        <div
-                                            data-employee-results
-                                            class="hidden absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-surface shadow-lg"
-                                        ></div>
-                                    </div>
-                                    <p class="text-xs text-muted">Select an employee 201 record. Employees with an existing login cannot be selected.</p>
-                                    <p class="hidden text-xs text-danger" data-error="employee_id"></p>
-                                    <div data-duplicate-banner class="hidden rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-heading">
-                                        This employee already has a user account.
-                                    </div>
+                                <div data-employee-picker class="hidden">
+                                    <x-ui.employee-search
+                                        name="employee_id"
+                                        id="user-employee"
+                                        label="Employee"
+                                        :required="true"
+                                        hint="Select an employee 201 record. Employees with an existing login cannot be selected."
+                                    >
+                                        <div data-duplicate-banner class="hidden rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-heading">
+                                            This employee already has a user account.
+                                        </div>
+                                    </x-ui.employee-search>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-heading mb-1.5">Full name</label>
@@ -127,6 +128,7 @@
                                     <div>
                                         <label class="block text-sm font-medium text-heading mb-1.5">Email</label>
                                         <input name="email" type="email" required class="w-full h-11 px-3 rounded-xl border border-border bg-surface text-sm">
+                                        <p class="text-xs text-muted mt-1" data-email-hint>Login email for this account.</p>
                                         <p class="hidden text-xs text-danger mt-1" data-error="email"></p>
                                     </div>
                                     <div data-employee-number-field>
@@ -186,13 +188,13 @@
             <x-ui.data-panel id="security-roles" title="Roles & permissions" create-label="Add role">
                 <x-slot:subtitle>Create roles and assign module permissions (RBAC).</x-slot:subtitle>
                 <x-slot:filters>
-                    <div class="relative min-w-[180px] flex-1 sm:flex-none">
-                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
+                    <div class="relative w-full sm:col-span-2 lg:w-52 lg:flex-none">
+                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"></i>
                         <input
                             type="search"
                             data-filter="search"
                             placeholder="Search roles…"
-                            class="w-full sm:w-56 h-10 pl-9 pr-3 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            class="w-full h-10 min-h-[44px] sm:min-h-10 pl-9 pr-3 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                         >
                     </div>
                 </x-slot:filters>
@@ -255,6 +257,74 @@
                     </x-ui.modal>
                 </x-slot:modals>
             </x-ui.data-panel>
+        </div>
+    @endif
+
+    @if ($canPasswordPolicy)
+        <div data-security-panel="password-policy" class="{{ $defaultTab === 'password-policy' ? '' : 'hidden' }}">
+            <div class="bg-surface border border-border rounded-2xl p-5 md:p-6" data-spa-module="password-policy">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-bold tracking-wide text-faint uppercase">ADM-005</p>
+                        <h3 class="text-lg font-semibold text-heading mt-1">Password policy</h3>
+                        <p class="text-sm text-muted mt-1 max-w-2xl">
+                            Complexity, expiration, reuse history, and temporary-password force change.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        data-save-policy
+                        class="inline-flex items-center justify-center h-10 min-h-[44px] px-4 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-strong transition-colors"
+                    >
+                        Save policy
+                    </button>
+                </div>
+
+                <form id="password-policy-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5" novalidate>
+                    <div>
+                        <label class="block text-xs font-medium text-text-secondary mb-1.5" for="min_length">Minimum length</label>
+                        <input id="min_length" name="min_length" type="number" min="6" max="64" class="w-full h-11 px-3 rounded-xl border border-border bg-subtle text-sm">
+                        <p class="hidden text-xs text-danger mt-1" data-error="min_length"></p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-text-secondary mb-1.5" for="expire_days">Expire after (days)</label>
+                        <input id="expire_days" name="expire_days" type="number" min="0" max="730" class="w-full h-11 px-3 rounded-xl border border-border bg-subtle text-sm">
+                        <p class="text-xs text-muted mt-1">Use 0 to disable expiration.</p>
+                        <p class="hidden text-xs text-danger mt-1" data-error="expire_days"></p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-text-secondary mb-1.5" for="history_count">Password history count</label>
+                        <input id="history_count" name="history_count" type="number" min="0" max="24" class="w-full h-11 px-3 rounded-xl border border-border bg-subtle text-sm">
+                        <p class="text-xs text-muted mt-1">Block reuse of the last N passwords.</p>
+                        <p class="hidden text-xs text-danger mt-1" data-error="history_count"></p>
+                    </div>
+                    <div class="space-y-3 md:pt-7">
+                        <label class="inline-flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                            <input type="checkbox" name="require_mixed_case" class="accent-primary" value="1">
+                            Require upper and lower case
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                            <input type="checkbox" name="require_numbers" class="accent-primary" value="1">
+                            Require a number
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                            <input type="checkbox" name="require_symbols" class="accent-primary" value="1">
+                            Require a symbol
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                            <input type="checkbox" name="uncompromised" class="accent-primary" value="1">
+                            Reject known breached passwords
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                            <input type="checkbox" name="force_change_temporary" class="accent-primary" value="1">
+                            Force change on temporary / admin-set passwords
+                        </label>
+                    </div>
+                    <div class="md:col-span-2">
+                        <p class="text-xs text-muted" data-policy-hint></p>
+                    </div>
+                </form>
+            </div>
         </div>
     @endif
 </section>

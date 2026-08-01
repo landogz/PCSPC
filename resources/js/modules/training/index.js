@@ -1,8 +1,10 @@
 /**
- * training module (SPA)
- * See config/navigation.php and docs/MODULES.md
- * Future: Axios + DataTables against /api/v1/training
+ * Training module (SPA stub — EMP-005 / TRN-001).
+ * Full Axios + DataTables CRUD lands in Phase 6.
  */
 export function initTrainingModule() {
-    // Scaffold only — feature APIs land with the mapped phase.
+    const root = document.querySelector('[data-module="training"]');
+    if (!root) {
+        return;
+    }
 }

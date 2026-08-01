@@ -3,10 +3,14 @@
 namespace App\Services\Employees;
 
 use App\Models\Employee;
+use App\Models\EmployeeDependent;
+use App\Models\EmployeeEducation;
 use App\Models\User;
 use App\Repositories\Employees\EmployeeRepository;
 use App\Services\Administration\PasswordPolicyService;
 use App\Services\Audit\AuditLogger;
+use App\Services\Exports\XlsxWriter;
+use App\Services\Lookups\LookupService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +24,8 @@ class EmployeeService
         private readonly EmployeeRepository $employees,
         private readonly AuditLogger $audit,
         private readonly PasswordPolicyService $passwordPolicy,
+        private readonly XlsxWriter $xlsx,
+        private readonly LookupService $lookups,
     ) {}
 
     /**
@@ -28,6 +34,153 @@ class EmployeeService
     public function list(array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
         return $this->employees->paginate($filters, $perPage);
+    }
+
+    /**
+     * Shared employee typeahead payload (Documents, Security, etc.).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function searchLookup(string $search, int $limit = 15): array
+    {
+        return $this->employees->searchLookup($search, $limit)->map(function (Employee $employee): array {
+            $hasAccount = $employee->user_id !== null
+                || $this->employees->findUserByEmployeeNumberOrEmail(
+                    $employee->employee_number,
+                    $employee->email,
+                ) !== null;
+
+            return [
+                'id' => $employee->uuid,
+                'employee_number' => $employee->employee_number,
+                'full_name' => $employee->fullName(),
+                'email' => $employee->email,
+                'photo_url' => $employee->photoUrl(),
+                'has_account' => $hasAccount,
+                'label' => trim($employee->employee_number.' — '.$employee->fullName()),
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * Build an Excel (.xlsx) export for the current employee filters.
+     *
+     * @param  array{search?: string, status?: string, department?: string}  $filters
+     * @return array{binary: string, filename: string, row_count: int, truncated: bool}
+     */
+    public function export(array $filters = [], bool $revealStatutory = false): array
+    {
+        $limit = 5000;
+        $employees = $this->employees->forExport($filters, $limit + 1);
+        $truncated = $employees->count() > $limit;
+        if ($truncated) {
+            $employees = $employees->take($limit);
+        }
+
+        $headers = [
+            'Employee Number',
+            'First Name',
+            'Middle Name',
+            'Last Name',
+            'Suffix',
+            'Full Name',
+            'Email',
+            'Mobile',
+            'Department Code',
+            'Department',
+            'Position',
+            'Employment Status',
+            'Date Hired',
+            'Date Regularized',
+            'Date Separated',
+            'Birth Date',
+            'Gender',
+            'Civil Status',
+            'Nationality',
+            'Address',
+            'City',
+            'Province',
+            'ZIP Code',
+            'TIN',
+            'SSS Number',
+            'PhilHealth Number',
+            'Pag-IBIG Number',
+            'Linked Login Email',
+            'Login Active',
+        ];
+
+        $rows = $employees->map(function (Employee $employee) use ($revealStatutory): array {
+            return [
+                $employee->employee_number,
+                $employee->first_name,
+                $employee->middle_name,
+                $employee->last_name,
+                $employee->suffix,
+                $employee->fullName(),
+                $employee->email,
+                $employee->mobile,
+                $employee->department?->code,
+                $employee->department?->name,
+                $employee->position_title,
+                $employee->employment_status,
+                $employee->date_hired?->toDateString(),
+                $employee->date_regularized?->toDateString(),
+                $employee->date_separated?->toDateString(),
+                $employee->birth_date?->toDateString(),
+                $employee->gender,
+                $employee->civil_status,
+                $employee->nationality,
+                $employee->address_line,
+                $employee->city,
+                $employee->province,
+                $employee->zip_code,
+                $this->maskOrRevealStatutory($employee->tin, $revealStatutory),
+                $this->maskOrRevealStatutory($employee->sss_number, $revealStatutory),
+                $this->maskOrRevealStatutory($employee->philhealth_number, $revealStatutory),
+                $this->maskOrRevealStatutory($employee->pagibig_number, $revealStatutory),
+                $employee->user?->email,
+                $employee->user === null ? null : ($employee->user->is_active ? 'Yes' : 'No'),
+            ];
+        })->values()->all();
+
+        $binary = $this->xlsx->toString($headers, $rows, 'Employees');
+        $filename = 'employees-'.now()->format('Y-m-d-His').'.xlsx';
+
+        $this->audit->log('employee.exported', [
+            'row_count' => count($rows),
+            'truncated' => $truncated,
+            'statutory_revealed' => $revealStatutory,
+            'filters' => [
+                'search' => (string) ($filters['search'] ?? ''),
+                'status' => (string) ($filters['status'] ?? ''),
+                'department' => (string) ($filters['department'] ?? ''),
+            ],
+        ]);
+
+        return [
+            'binary' => $binary,
+            'filename' => $filename,
+            'row_count' => count($rows),
+            'truncated' => $truncated,
+        ];
+    }
+
+    private function maskOrRevealStatutory(?string $value, bool $reveal): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if ($reveal) {
+            return $value;
+        }
+
+        $length = strlen($value);
+        if ($length <= 4) {
+            return str_repeat('*', $length);
+        }
+
+        return str_repeat('*', max(0, $length - 4)).substr($value, -4);
     }
 
     public function find(string $uuid): Employee
@@ -206,17 +359,38 @@ class EmployeeService
     }
 
     /**
-     * @return array{departments: list<array<string, mixed>>, statuses: list<string>}
+     * @return array{
+     *   departments: list<array<string, mixed>>,
+     *   statuses: list<string>,
+     *   status_options: list<array{code: string, label: string}>,
+     *   genders: list<array{code: string, label: string}>,
+     *   civil_statuses: list<array{code: string, label: string}>,
+     *   dependent_relationships: list<string>,
+     *   dependent_relationship_options: list<array{code: string, label: string}>,
+     *   education_levels: list<string>,
+     *   education_level_options: list<array{code: string, label: string}>
+     * }
      */
     public function meta(): array
     {
+        $statusOptions = $this->lookups->activeOptions('employment_status', Employee::STATUSES);
+        $relationshipOptions = $this->lookups->activeOptions('dependent_relationship', EmployeeDependent::RELATIONSHIPS);
+        $educationOptions = $this->lookups->activeOptions('education_level', EmployeeEducation::LEVELS);
+
         return [
             'departments' => $this->employees->activeDepartments()->map(fn ($department) => [
                 'id' => $department->uuid,
                 'code' => $department->code,
                 'name' => $department->name,
             ])->values()->all(),
-            'statuses' => Employee::STATUSES,
+            'statuses' => array_column($statusOptions, 'code'),
+            'status_options' => $statusOptions,
+            'genders' => $this->lookups->activeOptions('gender'),
+            'civil_statuses' => $this->lookups->activeOptions('civil_status'),
+            'dependent_relationships' => array_column($relationshipOptions, 'code'),
+            'dependent_relationship_options' => $relationshipOptions,
+            'education_levels' => array_column($educationOptions, 'code'),
+            'education_level_options' => $educationOptions,
         ];
     }
 

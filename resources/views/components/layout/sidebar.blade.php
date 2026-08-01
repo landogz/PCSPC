@@ -1,6 +1,11 @@
 @php
     use App\Support\Navigation;
+    use App\Services\Administration\SystemParameterService;
+
     $nav = Navigation::sections();
+    $brand = app(SystemParameterService::class)->current();
+    $brandLogoUrl = $brand['logo_url'];
+    $brandLogoAlt = $brand['company_name'] !== '' ? $brand['company_name'] : config('app.name');
 @endphp
 
 {{-- Mobile Sidebar Overlay --}}
@@ -17,8 +22,9 @@
     <div class="h-20 flex items-center justify-between px-4 border-b border-border">
         <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center rounded-lg bg-white px-2.5 py-1.5">
             <img
-                src="{{ asset('images/brand/pcspc-logo.png') }}"
-                alt="{{ config('app.name') }}"
+                data-brand-logo
+                src="{{ $brandLogoUrl }}"
+                alt="{{ $brandLogoAlt }}"
                 width="650"
                 height="200"
                 decoding="async"
@@ -74,8 +80,9 @@
     <div class="h-20 flex items-center justify-between gap-2 px-3 border-b border-border-subtle">
         <a href="{{ route('dashboard') }}" class="flex min-w-0 flex-1 items-center overflow-hidden rounded-lg bg-white px-2.5 py-1.5">
             <img
-                src="{{ asset('images/brand/pcspc-logo.png') }}"
-                alt="{{ config('app.name') }}"
+                data-brand-logo
+                src="{{ $brandLogoUrl }}"
+                alt="{{ $brandLogoAlt }}"
                 width="650"
                 height="200"
                 decoding="async"

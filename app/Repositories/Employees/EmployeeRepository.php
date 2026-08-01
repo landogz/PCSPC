@@ -26,12 +26,54 @@ class EmployeeRepository
         return $query->paginate($perPage);
     }
 
+    /**
+     * @param  array{search?: string, status?: string, department?: string}  $filters
+     * @return Collection<int, Employee>
+     */
+    public function forExport(array $filters = [], int $limit = 5000): Collection
+    {
+        $query = Employee::query()
+            ->with(['department:id,uuid,code,name', 'user:id,uuid,name,email,employee_number,is_active'])
+            ->orderBy('employee_number');
+
+        $this->applyFilters($query, $filters);
+
+        return $query->limit(max(1, $limit))->get();
+    }
+
     public function findByUuid(string $uuid): ?Employee
     {
         return Employee::query()
             ->with(['department', 'user.roles'])
             ->where('uuid', $uuid)
             ->first();
+    }
+
+    /**
+     * Lightweight typeahead lookup for shared employee search dropdowns.
+     *
+     * @return Collection<int, Employee>
+     */
+    public function searchLookup(string $search, int $limit = 15): Collection
+    {
+        $search = trim($search);
+        $query = Employee::query()
+            ->with('user:id,uuid,email,employee_number')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->limit(max(1, min($limit, 30)));
+
+        if ($search !== '') {
+            $query->where(function (Builder $inner) use ($search): void {
+                $inner->where('employee_number', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('middle_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->get();
     }
 
     /**

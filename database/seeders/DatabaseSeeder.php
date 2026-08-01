@@ -13,6 +13,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AuthSeeder::class,
+            Lookups\LookupSeeder::class,
+            Holidays\PhilippineHolidaySeeder::class,
+            Shifts\PhilippineShiftSeeder::class,
         ]);
     }
 }

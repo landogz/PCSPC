@@ -18,8 +18,8 @@ Aligned to:
 | Time & Attendance | Leave Management | `/modules/leave` | P4 | LEV-001…002 | leave approval flow |
 | Time & Attendance | Overtime | `/modules/overtime` | P4 | OT-001 | leave/OT approval flow |
 | Time & Attendance | Workflow Approvals | `/modules/workflow` | P4 | WF-001 | Approver 1 → 2 → HR |
-| HR Records | Medical Records | `/modules/medical` | P6 | MED-001 | modules → Medical / Training / Perf |
-| HR Records | Training | `/modules/training` | P6 | TRN-001 | modules → Medical / Training / Perf |
+| HR Records | Medical Records | `/modules/medical` | P3 stub / P6 | EMP-006 · MED-001 | modules → Medical / Training / Perf |
+| HR Records | Training | `/modules/training` | P3 stub / P6 | EMP-005 · TRN-001 | modules → Medical / Training / Perf |
 | HR Records | Performance | `/modules/performance` | P6 | PRF-001 | modules → Medical / Training / Perf |
 | HR Records | Comp & Benefits | `/modules/compensation` | P6 | CMP-001 | modules → Medical / Training / Perf |
 | HR Records | Documents | `/modules/documents` | P3 | DOC-001 | modules → Employee 201 · Documents |
@@ -29,7 +29,11 @@ Aligned to:
 | Payroll Support | Travel | `/modules/travel` | P7 | TVL-001 | modules → Travel |
 | Insights | Reports & Analytics | `/modules/reports` | P7 | RPT-001 | modules → Reports & Analytics |
 | System | Administration | `/modules/administration` | P2–P3 | ADM-001…010 | Platform + Security |
-| System | Users & Security | `/modules/security` | P2–P3 | SEC-001…002 | login MFA/RBAC |
+| System | Lookups | `/modules/lookups` | P3 | ADM-006 | Administration · master data tables |
+| System | Holidays | `/modules/holidays` | P3 | ADM-008 | Administration · holiday calendar |
+| System | Shifts | `/modules/shifts` | P3 | ADM-009 | Administration · shift templates |
+| System | Schedules | `/modules/schedules` | P3 | ADM-009 | Administration · employee/dept shift assignment |
+| System | Users & Security | `/modules/security` | P2–P3 | SEC-001…002 · ADM-005 | login MFA/RBAC · password policy |
 | System | Audit Log | `/modules/audit` | P2–P8 | AUD-001 | auth audit events |
 | System | Notifications | `/modules/notifications` | P3–P4 | NOT-001 | leave email notify |
 | System | Help & Docs | `/modules/help` | P8–P9 | DOC-PLAN | P8 docs · P9 training |
@@ -57,7 +61,15 @@ routes under /api/v1/{key}
 | Menus & web routes | ✅ Connected via `config/navigation.php` + RBAC filter |
 | Auth / Security / Audit | ✅ SPA + `/api/v1` |
 | Departments | ✅ SPA + `/api/v1/departments` |
-| Employees 201 | ✅ SPA + `/api/v1/employees` (v1 fields; dependents/history/Excel later) |
+| Holidays | ✅ SPA + `/api/v1/holidays` |
+| Shifts | ✅ SPA + `/api/v1/shifts` |
+| Administration | ✅ system parameters + Lookups hub card (ADM-006) |
+| Lookups | ✅ SPA + `/api/v1/lookups` (ADM-006 master data tables) |
+| Schedules | ✅ SPA + `/api/v1/schedules` (ADM-009 employee/department shift assignment) |
+| Users & Security | ✅ users, roles, **ADM-005 password policy** |
+| Employees 201 | ✅ SPA + `/api/v1/employees` (v1 fields + Excel + dependents + education + employment history + training/medical stubs) |
+| Training / Medical | 🔶 P3 stubs (201 tabs + module roadmap); full API pack in P6 |
+| Documents | ✅ Drive-style SPA + `/api/v1/documents` (preview, bulk, versions, expiry digest) |
 | Other module pages | ⬜ Scaffolds until mapped delivery phase |
 
 Legend: ✅ done · 🔶 partial · ⬜ not started — see [`PROJECT_PLAN.md`](PROJECT_PLAN.md) progress section.

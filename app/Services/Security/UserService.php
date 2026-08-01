@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Repositories\Security\UserRepository;
 use App\Services\Administration\PasswordPolicyService;
 use App\Services\Audit\AuditLogger;
+use App\Services\Employees\EmployeeService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class UserService
         private readonly UserRepository $users,
         private readonly AuditLogger $audit,
         private readonly PasswordPolicyService $passwordPolicy,
+        private readonly EmployeeService $employees,
     ) {}
 
     /**
@@ -45,19 +47,7 @@ class UserService
      */
     public function searchEmployees(string $search): array
     {
-        return $this->users->searchEmployeesForAccount($search)->map(function (Employee $employee) {
-            $hasAccount = $this->users->userExistsForEmployee($employee);
-
-            return [
-                'id' => $employee->uuid,
-                'employee_number' => $employee->employee_number,
-                'full_name' => $employee->fullName(),
-                'email' => $employee->email,
-                'photo_url' => $employee->photoUrl(),
-                'has_account' => $hasAccount,
-                'label' => trim($employee->employee_number.' — '.$employee->fullName()),
-            ];
-        })->values()->all();
+        return $this->employees->searchLookup($search);
     }
 
     /**
@@ -78,20 +68,33 @@ class UserService
             ]);
         }
 
-        if (! filled($employee->email)) {
+        $name = trim((string) ($payload['name'] ?? $employee->fullName()));
+        $email = strtolower(trim((string) ($payload['email'] ?? $employee->email)));
+
+        if ($name === '') {
             throw ValidationException::withMessages([
-                'employee_id' => ['Selected employee needs an email before a login can be created.'],
+                'name' => ['Full name is required.'],
+            ]);
+        }
+
+        if ($email === '') {
+            throw ValidationException::withMessages([
+                'email' => ['Email is required.'],
             ]);
         }
 
         $roleIds = $this->users->roleIdsByUuids($payload['role_ids'] ?? []);
 
-        $user = DB::transaction(function () use ($payload, $employee, $roleIds): User {
+        $user = DB::transaction(function () use ($payload, $employee, $roleIds, $name, $email): User {
             $forceChange = $this->passwordPolicy->current()['force_change_temporary'];
 
+            if (strcasecmp((string) $employee->email, $email) !== 0) {
+                $employee->forceFill(['email' => $email])->save();
+            }
+
             $user = $this->users->create([
-                'name' => $employee->fullName(),
-                'email' => strtolower((string) $employee->email),
+                'name' => $name,
+                'email' => $email,
                 'employee_number' => $employee->employee_number,
                 'password' => $payload['password'],
                 'is_active' => (bool) ($payload['is_active'] ?? true),
@@ -104,7 +107,7 @@ class UserService
 
             $this->users->linkEmployee($employee, $user);
 
-            return $user->fresh(['roles']);
+            return $user->fresh(['roles', 'employee']);
         });
 
         $this->audit->log('user.created', [
@@ -137,9 +140,12 @@ class UserService
             ]);
         }
 
+        $email = strtolower(trim((string) $payload['email']));
+        $name = trim((string) $payload['name']);
+
         $data = [
-            'name' => $payload['name'],
-            'email' => $payload['email'],
+            'name' => $name,
+            'email' => $email,
             'is_active' => (bool) ($payload['is_active'] ?? $user->is_active),
             'mfa_enabled' => (bool) ($payload['mfa_enabled'] ?? $user->mfa_enabled),
         ];
@@ -161,7 +167,16 @@ class UserService
             $this->assertProtectedKeepsSuperAdmin($roleIds);
         }
 
-        $updated = $this->users->update($user, $data, $roleIds);
+        $updated = DB::transaction(function () use ($user, $data, $roleIds, $email): User {
+            $updated = $this->users->update($user, $data, $roleIds);
+
+            $employee = $updated->employee;
+            if ($employee !== null && strcasecmp((string) $employee->email, $email) !== 0) {
+                $employee->forceFill(['email' => $email])->save();
+            }
+
+            return $updated->fresh(['roles', 'employee']);
+        });
 
         $this->audit->log('user.updated', [
             'user_id' => $updated->uuid,
@@ -169,6 +184,7 @@ class UserService
             'password_changed' => $passwordChanged,
             'is_active' => (bool) $updated->is_active,
             'roles' => $updated->roles->pluck('slug')->values()->all(),
+            'employee_email_synced' => $updated->employee !== null,
         ], $actor);
 
         return $updated;

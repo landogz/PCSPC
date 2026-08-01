@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Mail\Auth\MfaOtpMail;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class LoginTest extends TestCase
@@ -104,6 +106,8 @@ class LoginTest extends TestCase
 
     public function test_mfa_challenge_and_verify_flow(): void
     {
+        Mail::fake();
+
         $user = User::factory()->withMfa()->create([
             'email' => 'mfa@pcspc.local',
             'password' => Hash::make('Password1!'),
@@ -116,12 +120,18 @@ class LoginTest extends TestCase
 
         $challenge->assertOk()
             ->assertJsonPath('data.mfa_required', true)
+            ->assertJsonPath('data.email_delivered', true)
+            ->assertJsonPath('data.otp_sent_to', 'mf*@pcspc.local')
             ->assertJsonStructure(['data' => ['mfa_token', 'debug_otp']]);
-
-        $this->assertGuest();
 
         $otp = $challenge->json('data.debug_otp');
         $mfaToken = $challenge->json('data.mfa_token');
+
+        Mail::assertSent(MfaOtpMail::class, function (MfaOtpMail $mail) use ($user, $otp): bool {
+            return $mail->hasTo($user->email) && $mail->otp === $otp;
+        });
+
+        $this->assertGuest();
 
         $verify = $this->postJson('/api/v1/auth/mfa/verify', [
             'mfa_token' => $mfaToken,
@@ -133,6 +143,43 @@ class LoginTest extends TestCase
             ->assertJsonPath('data.user.id', $user->uuid);
 
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_mfa_resend_sends_a_new_email_code(): void
+    {
+        Mail::fake();
+
+        User::factory()->withMfa()->create([
+            'email' => 'mfa-resend@pcspc.local',
+            'password' => Hash::make('Password1!'),
+        ]);
+
+        $challenge = $this->postJson('/api/v1/auth/login', [
+            'login' => 'mfa-resend@pcspc.local',
+            'password' => 'Password1!',
+        ])->assertOk();
+
+        $token = $challenge->json('data.mfa_token');
+        $firstOtp = $challenge->json('data.debug_otp');
+
+        Mail::assertSent(MfaOtpMail::class, 1);
+
+        $resend = $this->postJson('/api/v1/auth/mfa/resend', [
+            'mfa_token' => $token,
+        ])->assertOk()
+            ->assertJsonPath('data.mfa_required', true)
+            ->assertJsonPath('data.email_delivered', true);
+
+        $secondOtp = $resend->json('data.debug_otp');
+        $this->assertNotSame($firstOtp, $secondOtp);
+
+        Mail::assertSent(MfaOtpMail::class, 2);
+
+        $this->postJson('/api/v1/auth/mfa/verify', [
+            'mfa_token' => $resend->json('data.mfa_token'),
+            'otp' => $secondOtp,
+        ])->assertOk()
+            ->assertJsonPath('data.mfa_required', false);
     }
 
     public function test_me_requires_authentication(): void

@@ -24,6 +24,8 @@ class AuthSeeder extends Seeder
             ['name' => 'Manage Departments', 'slug' => 'departments.manage', 'module' => 'departments'],
             ['name' => 'View Employees', 'slug' => 'employees.view', 'module' => 'employee'],
             ['name' => 'Manage Employees', 'slug' => 'employees.manage', 'module' => 'employee'],
+            ['name' => 'View Documents', 'slug' => 'documents.view', 'module' => 'documents'],
+            ['name' => 'Manage Documents', 'slug' => 'documents.manage', 'module' => 'documents'],
             ['name' => 'File Leave', 'slug' => 'leave.file', 'module' => 'leave'],
             ['name' => 'Approve Leave', 'slug' => 'leave.approve', 'module' => 'leave'],
             ['name' => 'View Timekeeping', 'slug' => 'timekeeping.view', 'module' => 'timekeeping'],
@@ -52,6 +54,8 @@ class AuthSeeder extends Seeder
                 'departments.manage',
                 'employees.view',
                 'employees.manage',
+                'documents.view',
+                'documents.manage',
                 'leave.file',
                 'leave.approve',
                 'timekeeping.view',
@@ -81,12 +85,8 @@ class AuthSeeder extends Seeder
         );
         $demoEmployee->roles()->sync([$employee->id]);
 
-        $mfaUser = $this->upsertUser(
-            'mfa@pcspc.local',
-            'MFA Demo Admin',
-            'EMP-0002',
-            true,
-        );
+        $mfaEmail = (string) env('MFA_DEMO_EMAIL', 'mfa@pcspc.local');
+        $mfaUser = $this->upsertUser($mfaEmail, 'MFA Demo Admin', 'EMP-0002', true);
         $mfaUser->roles()->sync([$superAdmin->id]);
 
         // Platform super-admin: not linked to an employee 201 record; cannot be deleted/deactivated.
@@ -206,11 +206,21 @@ class AuthSeeder extends Seeder
         bool $mfaEnabled,
         bool $isProtected = false,
     ): User {
-        $user = User::query()->firstOrNew(['email' => $email]);
-        if (! $user->exists) {
-            $user->uuid = (string) Str::uuid();
+        $user = User::query()->where('email', $email)->first();
+
+        if ($user === null && filled($employeeNumber)) {
+            $user = User::query()->where('employee_number', $employeeNumber)->first();
         }
+
+        if ($user === null) {
+            $user = new User([
+                'uuid' => (string) Str::uuid(),
+                'email' => $email,
+            ]);
+        }
+
         $user->fill([
+            'email' => $email,
             'name' => $name,
             'employee_number' => $employeeNumber,
             'password' => Hash::make('Password1!'),

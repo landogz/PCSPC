@@ -33,7 +33,7 @@ Open `http://127.0.0.1:8000/login`
 |-------|----------|-------|
 | `admin@pcspc.local` / `EMP-0001` | `Password1!` | HR Admin (no MFA) |
 | `employee@pcspc.local` / `EMP-1001` | `Password1!` | Employee |
-| `mfa@pcspc.local` / `EMP-0002` | `Password1!` | MFA challenge (OTP in `storage/logs/laravel.log` locally) |
+| `mfa@pcspc.local` / `EMP-0002` (or `MFA_DEMO_EMAIL`) | `Password1!` | MFA challenge — OTP emailed; local also logs OTP |
 
 ### Auth API
 

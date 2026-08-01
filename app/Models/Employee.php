@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Employee extends Model
@@ -77,6 +78,32 @@ class Employee extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function dependents(): HasMany
+    {
+        return $this->hasMany(EmployeeDependent::class)->orderBy('last_name')->orderBy('first_name');
+    }
+
+    public function educations(): HasMany
+    {
+        return $this->hasMany(EmployeeEducation::class)
+            ->orderByDesc('is_highest')
+            ->orderByDesc('year_ended')
+            ->orderBy('institution');
+    }
+
+    public function employmentHistories(): HasMany
+    {
+        return $this->hasMany(EmployeeEmploymentHistory::class)
+            ->orderByDesc('is_current')
+            ->orderByDesc('date_from');
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(EmployeeDocument::class)
+            ->orderByDesc('created_at');
     }
 
     public function fullName(): string

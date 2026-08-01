@@ -268,80 +268,315 @@
         }
     }
 
-    .employee-tab {
+    /* Employee form section navigator */
+    .employee-form-nav {
+        background:
+            linear-gradient(180deg, color-mix(in srgb, var(--color-n50, #f7f8fa) 88%, #fff) 0%, var(--color-w1, #ffffff) 100%);
+    }
+
+    .employee-tabs-wrap {
+        position: relative;
+    }
+
+    .employee-tabs-arrow {
+        position: absolute;
+        top: 50%;
+        z-index: 20;
         display: inline-flex;
         align-items: center;
-        gap: 0.375rem;
-        white-space: nowrap;
-        border-radius: 0.5rem 0.5rem 0 0;
-        border-bottom: 2px solid transparent;
-        padding: 0.625rem 0.75rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: var(--color-n500, #404a60);
-        background: transparent;
-        transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        margin-top: 0.35rem;
+        border: 1px solid var(--color-n200, #e2e5ea);
+        border-radius: 999px;
+        background: var(--color-w1, #ffffff);
+        color: var(--color-n700, #28303f);
+        box-shadow: 0 1px 3px rgb(14 18 24 / 0.08);
+        transform: translateY(-50%);
+        transition:
+            opacity 0.15s ease,
+            background-color 0.15s ease,
+            border-color 0.15s ease,
+            color 0.15s ease,
+            visibility 0.15s ease;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    .employee-tabs-arrow-prev {
+        left: 0.5rem;
+    }
+
+    .employee-tabs-arrow-next {
+        right: 0.5rem;
     }
 
     @media (min-width: 640px) {
-        .employee-tab {
-            padding-left: 0.875rem;
-            padding-right: 0.875rem;
+        .employee-tabs-arrow {
+            width: 2.25rem;
+            height: 2.25rem;
         }
+
+        .employee-tabs-arrow-prev {
+            left: 0.75rem;
+        }
+
+        .employee-tabs-arrow-next {
+            right: 0.75rem;
+        }
+    }
+
+    .employee-tabs-arrow:hover:not(:disabled) {
+        border-color: color-mix(in srgb, var(--color-primary, #d31219) 35%, var(--color-n200, #e2e5ea));
+        color: var(--color-primary, #d31219);
+        background: color-mix(in srgb, var(--color-primary, #d31219) 6%, #fff);
+    }
+
+    .employee-tabs-arrow:focus-visible {
+        outline: 2px solid color-mix(in srgb, var(--color-primary, #d31219) 45%, transparent);
+        outline-offset: 2px;
+    }
+
+    .employee-tabs-arrow:disabled,
+    .employee-tabs-arrow[aria-disabled='true'] {
+        opacity: 0.35;
+        cursor: not-allowed;
+        color: var(--color-n400, #94a0b0);
+        box-shadow: none;
+    }
+
+    /* Hide arrows when everything fits; show edges only when overflow exists */
+    .employee-tabs-wrap:not(.has-tab-overflow) .employee-tabs-arrow {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .employee-tabs-wrap:not(.has-tab-overflow) .employee-tabs-fade {
+        opacity: 0;
+    }
+
+    .employee-tabs-wrap:not(.can-scroll-prev) .employee-tabs-fade:not(.employee-tabs-fade-end) {
+        opacity: 0;
+    }
+
+    .employee-tabs-wrap:not(.can-scroll-next) .employee-tabs-fade-end {
+        opacity: 0;
+    }
+
+    .employee-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: 0.375rem;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
+        scroll-padding-inline: 0.25rem;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding-bottom: 0.125rem;
+    }
+
+    .employee-tabs::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+
+    .employee-tabs-fade {
+        background: linear-gradient(
+            90deg,
+            color-mix(in srgb, var(--color-n50, #f7f8fa) 88%, #fff),
+            transparent
+        );
+    }
+
+    .employee-tabs-fade-end {
+        background: linear-gradient(
+            270deg,
+            color-mix(in srgb, var(--color-n50, #f7f8fa) 88%, #fff),
+            transparent
+        );
+    }
+
+    .employee-tab {
+        position: relative;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.2rem;
+        flex: 0 0 auto;
+        min-width: 4.25rem;
+        min-height: 3.25rem;
+        padding: 0.5rem 0.625rem;
+        border: 1px solid transparent;
+        border-radius: 0.875rem;
+        scroll-snap-align: start;
+        white-space: nowrap;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        color: var(--color-n500, #404a60);
+        background: color-mix(in srgb, var(--color-n100, #eef0f3) 55%, transparent);
+        transition:
+            color 0.15s ease,
+            background-color 0.15s ease,
+            border-color 0.15s ease,
+            box-shadow 0.15s ease,
+            transform 0.15s ease;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    .employee-tab-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 0.625rem;
+        background: var(--color-w1, #ffffff);
+        color: var(--color-n500, #404a60);
+        box-shadow: 0 1px 2px rgb(14 18 24 / 0.06);
+        transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .employee-tab-icon i {
+        font-size: 1rem;
+        line-height: 1;
+    }
+
+    .employee-tab-label-full {
+        display: none;
+    }
+
+    .employee-tab-label-short {
+        display: inline;
     }
 
     .employee-tab:hover {
         color: var(--color-n900, #0e1218);
+        background: color-mix(in srgb, var(--color-n100, #eef0f3) 85%, #fff);
+    }
+
+    .employee-tab:hover .employee-tab-icon {
+        color: var(--color-n900, #0e1218);
+    }
+
+    .employee-tab:focus-visible {
+        outline: 2px solid color-mix(in srgb, var(--color-primary, #d31219) 45%, transparent);
+        outline-offset: 2px;
     }
 
     .employee-tab.is-active {
         color: var(--color-primary, #d31219);
-        font-weight: 700;
-        background-color: var(--color-w1, #ffffff);
-        border-bottom-color: var(--color-primary, #d31219);
-        box-shadow: 0 -1px 0 var(--color-w1, #ffffff);
+        background: color-mix(in srgb, var(--color-primary, #d31219) 8%, #fff);
+        border-color: color-mix(in srgb, var(--color-primary, #d31219) 28%, transparent);
+        box-shadow:
+            0 1px 2px rgb(211 18 25 / 0.08),
+            inset 0 0 0 1px color-mix(in srgb, var(--color-primary, #d31219) 8%, transparent);
     }
 
-    .employee-progress-track {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 0.25rem;
-        width: 5.5rem;
-    }
-
-    .employee-progress-seg {
-        height: 0.375rem;
-        border-radius: 999px;
-        background-color: transparent;
-        border: 1.5px solid var(--color-n300, #cbd0d8);
-        transition: background-color 0.2s ease, border-color 0.2s ease;
-    }
-
-    .employee-progress-seg.is-done {
-        background-color: var(--color-primary, #d31219);
-        border-color: var(--color-primary, #d31219);
-    }
-
-    .employee-progress-seg.is-current:not(.is-done) {
-        border-color: var(--color-primary, #d31219);
-        background-color: color-mix(in srgb, var(--color-primary, #d31219) 18%, transparent);
-    }
-
-    .employee-progress-seg.is-current.is-done {
-        box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary, #d31219) 25%, transparent);
+    .employee-tab.is-active .employee-tab-icon {
+        background: var(--color-primary, #d31219);
+        color: #fff;
+        box-shadow: 0 4px 10px rgb(211 18 25 / 0.22);
     }
 
     .employee-tab-error {
+        position: absolute;
+        top: 0.35rem;
+        right: 0.35rem;
         display: inline-block;
         width: 0.5rem;
         height: 0.5rem;
         border-radius: 999px;
         background-color: var(--color-primary, #d31219);
+        box-shadow: 0 0 0 2px #fff;
         flex-shrink: 0;
     }
 
     .employee-tab-error.hidden {
         display: none;
+    }
+
+    .employee-progress-track {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 0.25rem;
+        width: 100%;
+    }
+
+    .employee-progress-seg {
+        height: 0.3125rem;
+        border-radius: 999px;
+        background-color: var(--color-n200, #e2e5ea);
+        border: 0;
+        transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .employee-progress-seg.is-done {
+        background-color: var(--color-primary, #d31219);
+    }
+
+    .employee-progress-seg.is-current:not(.is-done) {
+        background-color: color-mix(in srgb, var(--color-primary, #d31219) 35%, var(--color-n200, #e2e5ea));
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary, #d31219) 18%, transparent);
+    }
+
+    .employee-progress-seg.is-current.is-done {
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary, #d31219) 22%, transparent);
+    }
+
+    @media (min-width: 640px) {
+        .employee-tab {
+            flex-direction: row;
+            gap: 0.5rem;
+            min-width: 0;
+            min-height: 2.75rem;
+            padding: 0.5rem 0.875rem;
+            font-size: 0.8125rem;
+            border-radius: 0.75rem;
+        }
+
+        .employee-tab-icon {
+            width: 1.625rem;
+            height: 1.625rem;
+            border-radius: 0.5rem;
+        }
+
+        .employee-tab-icon i {
+            font-size: 0.9375rem;
+        }
+
+        .employee-tab-label-full {
+            display: inline;
+        }
+
+        .employee-tab-label-short {
+            display: none;
+        }
+
+        .employee-tab-error {
+            top: 0.4rem;
+            right: 0.4rem;
+        }
+
+        .employee-progress-seg {
+            height: 0.375rem;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .employee-tab {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            font-size: 0.875rem;
+        }
     }
 
     .employee-photo-dropzone {
@@ -353,5 +588,11 @@
     .employee-photo-dropzone:hover {
         border-color: color-mix(in srgb, var(--color-primary, #d31219) 45%, var(--color-n300, #cbd0d8));
         background-color: color-mix(in srgb, var(--color-primary, #d31219) 4%, var(--color-n50, #f7f8fa));
+    }
+
+    #dependent-modal,
+    #education-modal,
+    #employment-history-modal {
+        z-index: 80;
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Employees;
 
 use App\Models\Employee;
+use App\Support\LookupRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -13,6 +14,21 @@ class UpdateEmployeeRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()?->hasPermission('employees.manage') ?? false;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        foreach (['gender', 'civil_status'] as $field) {
+            if ($this->input($field) === '') {
+                $this->merge([$field => null]);
+            }
+        }
+
+        if ($this->has('remove_photo')) {
+            $this->merge([
+                'remove_photo' => filter_var($this->input('remove_photo'), FILTER_VALIDATE_BOOLEAN),
+            ]);
+        }
     }
 
     /**
@@ -42,13 +58,13 @@ class UpdateEmployeeRequest extends FormRequest
             'mobile' => ['nullable', 'string', 'max:30'],
             'department_id' => ['nullable', 'uuid', Rule::exists('departments', 'uuid')],
             'position_title' => ['nullable', 'string', 'max:150'],
-            'employment_status' => ['required', Rule::in(Employee::STATUSES)],
+            'employment_status' => ['required', LookupRules::in('employment_status', Employee::STATUSES)],
             'date_hired' => ['nullable', 'date'],
             'date_regularized' => ['nullable', 'date', 'after_or_equal:date_hired'],
             'date_separated' => ['nullable', 'date'],
             'birth_date' => ['nullable', 'date', 'before:today'],
-            'gender' => ['nullable', 'string', 'max:20'],
-            'civil_status' => ['nullable', 'string', 'max:30'],
+            'gender' => ['nullable', 'string', 'max:60', LookupRules::in('gender')],
+            'civil_status' => ['nullable', 'string', 'max:60', LookupRules::in('civil_status')],
             'nationality' => ['nullable', 'string', 'max:50'],
             'address_line' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:100'],
@@ -61,14 +77,5 @@ class UpdateEmployeeRequest extends FormRequest
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_photo' => ['sometimes', 'boolean'],
         ];
-    }
-
-    protected function prepareForValidation(): void
-    {
-        if ($this->has('remove_photo')) {
-            $this->merge([
-                'remove_photo' => filter_var($this->input('remove_photo'), FILTER_VALIDATE_BOOLEAN),
-            ]);
-        }
     }
 }
