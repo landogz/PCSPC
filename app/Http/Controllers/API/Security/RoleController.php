@@ -13,10 +13,16 @@ use Illuminate\Http\Request;
 
 class RoleController extends Controller
 {
+    /**
+     * Inject the role service.
+     */
     public function __construct(
         private readonly RoleService $roles,
     ) {}
 
+    /**
+     * List roles with search filters and pagination.
+     */
     public function index(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->integer('per_page', 10), 1), 100);
@@ -36,6 +42,9 @@ class RoleController extends Controller
         ]);
     }
 
+    /**
+     * Create a new role with assigned permissions.
+     */
     public function store(StoreRoleRequest $request): JsonResponse
     {
         $role = $this->roles->create($request->validated());
@@ -45,6 +54,9 @@ class RoleController extends Controller
         ], 201);
     }
 
+    /**
+     * Return a single role and its permissions by UUID.
+     */
     public function show(string $role): JsonResponse
     {
         $model = $this->roles->find($role);
@@ -54,6 +66,9 @@ class RoleController extends Controller
         ]);
     }
 
+    /**
+     * Update role details and permission assignments.
+     */
     public function update(UpdateRoleRequest $request, string $role): JsonResponse
     {
         $model = $this->roles->update($role, $request->validated());
@@ -63,6 +78,9 @@ class RoleController extends Controller
         ]);
     }
 
+    /**
+     * Permanently delete a role.
+     */
     public function destroy(string $role): JsonResponse
     {
         $this->roles->delete($role);
@@ -70,6 +88,9 @@ class RoleController extends Controller
         return ApiResponse::success('Role deleted.');
     }
 
+    /**
+     * Return all permissions grouped by module for role assignment UIs.
+     */
     public function permissions(): JsonResponse
     {
         $grouped = $this->roles->permissions()

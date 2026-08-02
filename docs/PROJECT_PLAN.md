@@ -4,12 +4,13 @@
 **Client:** Philippine Coastal Storage & Pipeline Corporation (PCSPC)  
 **Sources:** `docs/hris-bidding/` (Invitation to Bid, TOR, Scope of Work, Annex A, Form of Proposal)  
 **Proposed delivery:** ~36 weeks to Go-Live + **6 months warranty** (duration subject to PCSPC approval)  
-**Plan last updated:** 2026-08-01
+**Plan last updated:** 2026-08-02
 
 Interactive views:
-- Plan: [`hris-project-plan.canvas.tsx`](/Users/landogz/.cursor/projects/Applications-XAMPP-xamppfiles-htdocs-PCSPC/canvases/hris-project-plan.canvas.tsx)
-- Flowcharts: [`hris-flowcharts.canvas.tsx`](/Users/landogz/.cursor/projects/Applications-XAMPP-xamppfiles-htdocs-PCSPC/canvases/hris-flowcharts.canvas.tsx)
+- Plan: [`/docs/project-plan`](/docs/project-plan) ← phases P0–P10
+- Flowcharts: [`/docs/flowcharts`](/docs/flowcharts) ← Login · Modules · Leave/OT · Delivery (Mermaid; aligned with `hris-flowcharts.canvas.tsx`)
 - App menu map: [`/docs/modules`](/docs/modules) ← sidebar routes wired to this module map (`config/navigation.php`)
+- Public API docs: [`/api-docs`](/api-docs) ← live `/api/v1` catalog, sidebar **API Docs**, per-endpoint multi-language examples (+ [`/api-docs.json`](/api-docs.json))
 
 ### Legend
 
@@ -25,7 +26,7 @@ Interactive views:
 |-------|--------|-------------|
 | **P0** Procurement | 🔶 | Bid materials in `docs/hris-bidding/`; pre-bid still upcoming |
 | **P1** Discovery & Design | ⬜ | Workshops / SDD / ERD not started |
-| **P2** Platform Foundation | ✅ / 🔶 | **Done:** SPA shell, Sanctum auth, MFA, RBAC, Users & Security, Roles, Audit Log + domain AuditLogger, **ADM-005 password policy**, **Dashboard HR command center** (`/api/v1/dashboard/stats` — KPIs, department/headcount charts, pending incomplete profiles, on-leave list, recent activity; attendance/leave chart stubs for P4–P5), ApiResponse, FormRequests, nav RBAC, toasts, feature tests. **Open:** PostgreSQL switch, full CI/CD, three envs on GCP; live attendance/leave widgets pending those modules |
+| **P2** Platform Foundation | ✅ / 🔶 | **Done:** SPA shell, Sanctum auth, MFA, RBAC, Users & Security, Roles, Audit Log + domain AuditLogger, **ADM-005 password policy**, **Dashboard HR command center**, **public API docs** (`/api-docs` live catalog + sidebar + **per-endpoint** cURL/PHP/Python/Java/JS/C# examples), ApiResponse, FormRequests, nav RBAC, toasts, feature tests. **Open:** PostgreSQL switch, full CI/CD, three envs on GCP; live attendance/leave widgets pending those modules |
 | **P3** Employee 201 + Admin | ✅ | **Done:** Employees 201 (incl. **career history** — position/category/salary), Departments, Holidays (**ADM-008**), Shifts + **Schedules (ADM-009)**, System parameters (**ADM-010**), **Lookups (ADM-006)** + employment category, Documents (**DOC-001**), Training/Medical stubs. Timekeeping consumption of schedules remains P5. |
 | **P4–P10** | ⬜ | Not started |
 
@@ -219,7 +220,7 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 - ✅ Employment history CRUD (`/api/v1/employees/{id}/employment-history`) — prior employers, current-job flag, audited; History tab
 - ✅ Holidays CRUD (**Annex A ADM-008**) (`/api/v1/holidays`) — types, recurring/double-pay/paid-hours flags, audited; `/modules/holidays`
 - ✅ Philippine holiday calendar seeder (regular + special non-working/working + movable Holy Week / Eid / Chinese New Year) for 2025–2030
-- ✅ Shifts + Schedules (**Annex A ADM-009**) — templates (`/api/v1/shifts`) + employee/department assignments (`/api/v1/schedules`, `/modules/schedules`); timekeeping punch rules consume them in **P5**
+- ✅ Shifts + Schedules (**Annex A ADM-009**) — templates (`/api/v1/shifts`) + employee/department assignments (`/api/v1/schedules`, `/modules/schedules`); **landscape print** (`GET /api/v1/schedules/print`) per employee / per department; timekeeping punch rules consume them in **P5**
 - ✅ Philippine shift templates seeder (office, rotating A/B/C, night/graveyard, 12h, BPO, ops, security, half-day)
 - ✅ System parameters (**Annex A ADM-010**) (`GET|PUT /api/v1/administration/system-parameters`) — company identity, **company logo** upload/reset, timezone, leave-year start, rest-day holiday hours, default grace; audited; Administration UI; logo wired to login/sidebar/MFA mail
 - ✅ Training & medical stubs — Employee 201 tabs (EMP-005 / EMP-006 placeholders) + `/modules/training` & `/modules/medical` roadmap pages; full nested CRUD deferred to **P6**
@@ -288,7 +289,7 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 - ⬜ Full CI/CD: automated tests, quality gates, CD to Dev/Staging, gated Live deploy + rollback
 - ⬜ SAST/DAST, vulnerability assessment, backup/restore drill (BCP-001)
 - ⬜ Load/performance test report
-- 🔶 In-app Help & Docs + this Project Plan / Module map pages (partial docs UX)
+- 🔶 In-app Help & Docs + Project Plan / Module map / **Flowcharts** (`/docs/flowcharts`) pages (partial docs UX)
 - ⬜ Full B.7 docs: architecture, logic flows, setup guide, dependencies, ERD, API docs, deployment runbook, user + admin manuals
 
 **Exit:** Docs accepted; pipeline green; rollback tested.

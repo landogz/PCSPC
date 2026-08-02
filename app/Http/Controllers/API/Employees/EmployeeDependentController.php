@@ -12,10 +12,16 @@ use Illuminate\Http\JsonResponse;
 
 class EmployeeDependentController extends Controller
 {
+    /**
+     * Inject the employee dependent service.
+     */
     public function __construct(
         private readonly EmployeeDependentService $dependents,
     ) {}
 
+    /**
+     * List dependents and relationship options for an employee.
+     */
     public function index(string $employee): JsonResponse
     {
         $items = $this->dependents->list($employee)->map(
@@ -28,6 +34,9 @@ class EmployeeDependentController extends Controller
         ]);
     }
 
+    /**
+     * Add a dependent to an employee record.
+     */
     public function store(StoreEmployeeDependentRequest $request, string $employee): JsonResponse
     {
         $dependent = $this->dependents->create($employee, $request->validated());
@@ -37,6 +46,9 @@ class EmployeeDependentController extends Controller
         ], 201);
     }
 
+    /**
+     * Update an existing dependent record for an employee.
+     */
     public function update(UpdateEmployeeDependentRequest $request, string $employee, string $dependent): JsonResponse
     {
         $model = $this->dependents->update($employee, $dependent, $request->validated());
@@ -46,6 +58,9 @@ class EmployeeDependentController extends Controller
         ]);
     }
 
+    /**
+     * Remove a dependent from an employee record.
+     */
     public function destroy(string $employee, string $dependent): JsonResponse
     {
         $this->dependents->delete($employee, $dependent);

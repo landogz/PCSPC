@@ -14,15 +14,24 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EmployeeController extends Controller
 {
+    /**
+     * Inject the employee service.
+     */
     public function __construct(
         private readonly EmployeeService $employees,
     ) {}
 
+    /**
+     * Return form metadata such as departments, statuses, and lookup options.
+     */
     public function meta(): JsonResponse
     {
         return ApiResponse::success('Employee meta retrieved.', $this->employees->meta());
     }
 
+    /**
+     * Search employees by name, email, or employee number for typeahead pickers.
+     */
     public function search(Request $request): JsonResponse
     {
         $items = $this->employees->searchLookup(
@@ -35,6 +44,9 @@ class EmployeeController extends Controller
         ]);
     }
 
+    /**
+     * List employees with search, status, and department filters and pagination.
+     */
     public function index(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->integer('per_page', 10), 1), 100);
@@ -62,6 +74,9 @@ class EmployeeController extends Controller
         ]);
     }
 
+    /**
+     * Export filtered employees to an Excel spreadsheet download.
+     */
     public function export(Request $request): StreamedResponse
     {
         $reveal = $request->user()?->hasPermission('employees.manage') ?? false;
@@ -78,6 +93,9 @@ class EmployeeController extends Controller
         ]);
     }
 
+    /**
+     * Create a new employee record and provision an initial login account.
+     */
     public function store(StoreEmployeeRequest $request): JsonResponse
     {
         $payload = collect($request->validated())->except(['photo'])->all();
@@ -89,6 +107,9 @@ class EmployeeController extends Controller
         ], 201);
     }
 
+    /**
+     * Return a single employee profile by UUID with field visibility based on permissions.
+     */
     public function show(Request $request, string $employee): JsonResponse
     {
         $model = $this->employees->find($employee);
@@ -99,6 +120,9 @@ class EmployeeController extends Controller
         ]);
     }
 
+    /**
+     * Update employee details and optionally replace or remove the profile photo.
+     */
     public function update(UpdateEmployeeRequest $request, string $employee): JsonResponse
     {
         $payload = collect($request->validated())->except(['photo', 'remove_photo'])->all();
@@ -115,6 +139,9 @@ class EmployeeController extends Controller
         ]);
     }
 
+    /**
+     * Mark an employee as inactive without deleting their record.
+     */
     public function deactivate(string $employee): JsonResponse
     {
         $model = $this->employees->deactivate($employee);
@@ -124,6 +151,9 @@ class EmployeeController extends Controller
         ]);
     }
 
+    /**
+     * Permanently delete an employee record.
+     */
     public function destroy(string $employee): JsonResponse
     {
         $this->employees->delete($employee);

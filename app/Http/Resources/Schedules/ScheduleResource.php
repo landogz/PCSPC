@@ -46,6 +46,9 @@ class ScheduleResource extends JsonResource
                 'name' => $shift->name,
                 'time_in' => $shift->time_in,
                 'time_out' => $shift->time_out,
+                'break_minutes' => (int) ($shift->break_minutes ?? 0),
+                'grace_minutes' => (int) ($shift->grace_minutes ?? 0),
+                'crosses_midnight' => (bool) ($shift->crosses_midnight ?? false),
                 'label' => $shift->code.' — '.$shift->name,
             ],
             'employee' => $employee === null ? null : [
@@ -53,6 +56,11 @@ class ScheduleResource extends JsonResource
                 'employee_number' => $employee->employee_number,
                 'name' => trim($employee->first_name.' '.$employee->last_name),
                 'email' => $employee->email,
+                'department' => $employee->department === null ? null : [
+                    'id' => $employee->department->uuid,
+                    'code' => $employee->department->code,
+                    'name' => $employee->department->name,
+                ],
             ],
             'department' => $department === null ? null : [
                 'id' => $department->uuid,

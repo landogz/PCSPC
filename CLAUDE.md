@@ -77,6 +77,7 @@ Every piece of code touching user input, auth, or data must satisfy **all** of t
 
 - Follow **PSR-12** coding style for PHP.
 - Follow Laravel conventions: thin controllers, business logic in **Service classes** or **Actions**, data queries in **Repositories** or Eloquent scopes — not in Blade views or controllers.
+- Every controller method (including `__construct`) must have a short **English PHPDoc** describing the action — see `.cursor/rules/controller-comments.mdc`.
 - Use **Form Requests** for validation, **API Resources** for response shaping, **Enums** for fixed value sets (roles, statuses).
 - Type-hint everything: method parameters, return types, property types.
 - Use dependency injection over facades where practical inside services/classes (facades are fine in controllers/routes).

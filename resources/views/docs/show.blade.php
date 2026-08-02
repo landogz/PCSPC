@@ -12,7 +12,16 @@
                 <h2 class="text-xl font-bold text-heading mt-1">{{ $title }}</h2>
                 <p class="text-xs text-muted mt-1">docs/{{ $filename }}</p>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                @if (($doc ?? '') !== 'flowcharts')
+                    <a
+                        href="{{ route('docs.show', ['doc' => 'flowcharts']) }}"
+                        class="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border border-border text-sm font-medium text-text-secondary hover:border-border-strong hover:bg-subtle transition-colors"
+                    >
+                        <i class="ph ph-flow-arrow text-base"></i>
+                        Flowcharts
+                    </a>
+                @endif
                 @if (($doc ?? '') === 'project-plan')
                     <a
                         href="{{ route('docs.show', ['doc' => 'modules']) }}"
@@ -22,6 +31,29 @@
                         Module map
                     </a>
                 @endif
+                @if (($doc ?? '') === 'flowcharts')
+                    <a
+                        href="{{ route('docs.show', ['doc' => 'project-plan']) }}"
+                        class="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border border-border text-sm font-medium text-text-secondary hover:border-border-strong hover:bg-subtle transition-colors"
+                    >
+                        <i class="ph ph-map-trifold text-base"></i>
+                        Project Plan
+                    </a>
+                    <a
+                        href="{{ route('docs.show', ['doc' => 'modules']) }}"
+                        class="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border border-border text-sm font-medium text-text-secondary hover:border-border-strong hover:bg-subtle transition-colors"
+                    >
+                        <i class="ph ph-list-bullets text-base"></i>
+                        Module map
+                    </a>
+                @endif
+                <a
+                    href="{{ route('api-docs') }}"
+                    class="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border border-border text-sm font-medium text-text-secondary hover:border-border-strong hover:bg-subtle transition-colors"
+                >
+                    <i class="ph ph-code text-base"></i>
+                    API docs
+                </a>
                 <a
                     href="{{ route('modules.show', ['module' => 'help']) }}"
                     class="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border border-border text-sm font-medium text-text-secondary hover:border-border-strong hover:bg-subtle transition-colors"

@@ -9,6 +9,9 @@ use Illuminate\Http\Response;
 
 class ModulePageController extends Controller
 {
+    /**
+     * Render a permission-gated SPA module page when the view exists.
+     */
     public function show(string $module): View|Response
     {
         $item = Navigation::find($module);

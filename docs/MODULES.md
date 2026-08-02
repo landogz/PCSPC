@@ -4,7 +4,7 @@ Single source of truth for sidebar links: [`config/navigation.php`](../config/na
 
 Aligned to:
 - [`PROJECT_PLAN.md`](PROJECT_PLAN.md) §4 Module map
-- Cursor canvas `hris-flowcharts.canvas.tsx` (Login · Delivery · Modules · Leave/OT)
+- [`FLOWCHARTS.md`](FLOWCHARTS.md) / [`/docs/flowcharts`](/docs/flowcharts) (Login · Modules · Leave/OT · Delivery)
 - Enterprise API SPA rules (each feature later gets Service + Repository + `/api/v1/` + `resources/js/modules/{key}`)
 
 ## Navigation sections
@@ -37,6 +37,7 @@ Aligned to:
 | System | Audit Log | `/modules/audit` | P2–P8 | AUD-001 | auth audit events |
 | System | Notifications | `/modules/notifications` | P3–P4 | NOT-001 | leave email notify |
 | System | Help & Docs | `/modules/help` | P8–P9 | DOC-PLAN | P8 docs · P9 training |
+| System | API Docs | `/api-docs` | P2–P8 | DOC-PLAN | Live `/api/v1` catalog + code examples |
 
 ## Folder convention (per module)
 
@@ -59,13 +60,14 @@ routes under /api/v1/{key}
 | Area | Status |
 |------|--------|
 | Menus & web routes | ✅ Connected via `config/navigation.php` + RBAC filter |
+| Public API docs | ✅ `/api-docs` + `/api-docs.json` (live catalog, sidebar, **every endpoint** has cURL/PHP/Python/Java/JS/C# examples) |
 | Auth / Security / Audit | ✅ SPA + `/api/v1` |
 | Departments | ✅ SPA + `/api/v1/departments` |
 | Holidays | ✅ SPA + `/api/v1/holidays` |
 | Shifts | ✅ SPA + `/api/v1/shifts` |
 | Administration | ✅ system parameters + Lookups hub card (ADM-006) |
 | Lookups | ✅ SPA + `/api/v1/lookups` (ADM-006 master data tables) |
-| Schedules | ✅ SPA + `/api/v1/schedules` (ADM-009 employee/department shift assignment) |
+| Schedules | ✅ SPA + `/api/v1/schedules` (ADM-009 employee/department shift assignment) + landscape print report |
 | Users & Security | ✅ users, roles, **ADM-005 password policy** |
 | Employees 201 | ✅ SPA + `/api/v1/employees` (v1 fields + Excel + dependents + education + employment history + **career history** + training/medical stubs) |
 | Training / Medical | 🔶 P3 stubs (201 tabs + module roadmap); full API pack in P6 |

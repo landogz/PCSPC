@@ -13,10 +13,16 @@ use Illuminate\Http\Request;
 
 class ShiftController extends Controller
 {
+    /**
+     * Inject the shift service.
+     */
     public function __construct(
         private readonly ShiftService $shifts,
     ) {}
 
+    /**
+     * List shifts with search, status filters, and pagination.
+     */
     public function index(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->integer('per_page', 10), 1), 100);
@@ -37,6 +43,9 @@ class ShiftController extends Controller
         ]);
     }
 
+    /**
+     * Create a new shift definition.
+     */
     public function store(StoreShiftRequest $request): JsonResponse
     {
         $shift = $this->shifts->create($request->validated());
@@ -46,6 +55,9 @@ class ShiftController extends Controller
         ], 201);
     }
 
+    /**
+     * Return a single shift by UUID.
+     */
     public function show(string $shift): JsonResponse
     {
         $model = $this->shifts->find($shift);
@@ -55,6 +67,9 @@ class ShiftController extends Controller
         ]);
     }
 
+    /**
+     * Update an existing shift definition.
+     */
     public function update(UpdateShiftRequest $request, string $shift): JsonResponse
     {
         $model = $this->shifts->update($shift, $request->validated());
@@ -64,6 +79,9 @@ class ShiftController extends Controller
         ]);
     }
 
+    /**
+     * Permanently delete a shift definition.
+     */
     public function destroy(string $shift): JsonResponse
     {
         $this->shifts->delete($shift);

@@ -11,10 +11,16 @@ use Illuminate\Http\Request;
 
 class AuditLogController extends Controller
 {
+    /**
+     * Inject the audit log service.
+     */
     public function __construct(
         private readonly AuditLogService $logs,
     ) {}
 
+    /**
+     * List audit log entries with search, event, date filters, and pagination.
+     */
     public function index(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->integer('per_page', 15), 1), 100);
@@ -37,6 +43,9 @@ class AuditLogController extends Controller
         ]);
     }
 
+    /**
+     * Return a single audit log entry by UUID.
+     */
     public function show(string $log): JsonResponse
     {
         $model = $this->logs->find($log);
@@ -46,6 +55,9 @@ class AuditLogController extends Controller
         ]);
     }
 
+    /**
+     * Return distinct audit event names available for filtering.
+     */
     public function events(): JsonResponse
     {
         return ApiResponse::success('Audit events retrieved.', [

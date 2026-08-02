@@ -13,10 +13,16 @@ use Illuminate\Http\Request;
 
 class LookupController extends Controller
 {
+    /**
+     * Inject the lookup service.
+     */
     public function __construct(
         private readonly LookupService $lookups,
     ) {}
 
+    /**
+     * List all configured lookup type definitions.
+     */
     public function types(): JsonResponse
     {
         return ApiResponse::success('Lookup types retrieved.', [
@@ -24,6 +30,9 @@ class LookupController extends Controller
         ]);
     }
 
+    /**
+     * List lookup values with search, type, status filters, and pagination.
+     */
     public function index(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->integer('per_page', 20), 1), 100);
@@ -46,6 +55,9 @@ class LookupController extends Controller
         ]);
     }
 
+    /**
+     * Return active lookup options for one or more requested types.
+     */
     public function options(Request $request): JsonResponse
     {
         $raw = (string) $request->query('types', '');
@@ -63,6 +75,9 @@ class LookupController extends Controller
         ]);
     }
 
+    /**
+     * Create a new lookup value record.
+     */
     public function store(StoreLookupValueRequest $request): JsonResponse
     {
         $lookup = $this->lookups->create($request->validated());
@@ -72,6 +87,9 @@ class LookupController extends Controller
         ], 201);
     }
 
+    /**
+     * Return a single lookup value by UUID.
+     */
     public function show(string $lookup): JsonResponse
     {
         $model = $this->lookups->find($lookup);
@@ -81,6 +99,9 @@ class LookupController extends Controller
         ]);
     }
 
+    /**
+     * Update an existing lookup value.
+     */
     public function update(UpdateLookupValueRequest $request, string $lookup): JsonResponse
     {
         $model = $this->lookups->update($lookup, $request->validated());
@@ -90,6 +111,9 @@ class LookupController extends Controller
         ]);
     }
 
+    /**
+     * Permanently delete a lookup value.
+     */
     public function destroy(string $lookup): JsonResponse
     {
         $this->lookups->delete($lookup);

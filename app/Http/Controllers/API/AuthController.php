@@ -16,11 +16,17 @@ use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
+    /**
+     * Inject authentication and password policy services.
+     */
     public function __construct(
         private readonly AuthService $authService,
         private readonly PasswordPolicyService $passwordPolicy,
     ) {}
 
+    /**
+     * Authenticate credentials and start login or MFA challenge flow.
+     */
     public function login(LoginRequest $request): JsonResponse
     {
         $result = $this->authService->login(
@@ -34,6 +40,9 @@ class AuthController extends Controller
         return ApiResponse::success($result['message'], $result['data'], $result['http']);
     }
 
+    /**
+     * Verify an MFA one-time code and complete sign-in.
+     */
     public function verifyMfa(VerifyMfaRequest $request): JsonResponse
     {
         $result = $this->authService->verifyMfa(
@@ -46,6 +55,9 @@ class AuthController extends Controller
         return ApiResponse::success($result['message'], $result['data'], $result['http']);
     }
 
+    /**
+     * Resend the MFA one-time code for a pending login session.
+     */
     public function resendMfa(ResendMfaRequest $request): JsonResponse
     {
         $result = $this->authService->resendMfa(
@@ -57,6 +69,9 @@ class AuthController extends Controller
         return ApiResponse::success($result['message'], $result['data'], $result['http']);
     }
 
+    /**
+     * Return the authenticated user profile and password policy status.
+     */
     public function me(Request $request): JsonResponse
     {
         $user = $request->user()?->loadMissing(['roles.permissions', 'employee']);
@@ -71,6 +86,9 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Return the active password complexity and expiry rules.
+     */
     public function passwordPolicy(): JsonResponse
     {
         $policy = $this->passwordPolicy->current();
@@ -88,6 +106,9 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Change the authenticated user's password after validating the current one.
+     */
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
         $user = $request->user();
@@ -108,6 +129,9 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Revoke the current token and invalidate the web session when present.
+     */
     public function logout(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -127,6 +151,9 @@ class AuthController extends Controller
         return ApiResponse::success('Logged out successfully.');
     }
 
+    /**
+     * Revoke all other active sessions and tokens for the authenticated user.
+     */
     public function logoutOthers(Request $request): JsonResponse
     {
         $user = $request->user();

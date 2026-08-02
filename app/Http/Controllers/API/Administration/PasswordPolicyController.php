@@ -10,10 +10,16 @@ use Illuminate\Http\JsonResponse;
 
 class PasswordPolicyController extends Controller
 {
+    /**
+     * Inject the password policy service.
+     */
     public function __construct(
         private readonly PasswordPolicyService $passwordPolicy,
     ) {}
 
+    /**
+     * Return the active password policy configuration.
+     */
     public function show(): JsonResponse
     {
         return ApiResponse::success('Password policy retrieved.', [
@@ -21,6 +27,9 @@ class PasswordPolicyController extends Controller
         ]);
     }
 
+    /**
+     * Update password complexity, history, and expiry rules.
+     */
     public function update(UpdatePasswordPolicyRequest $request): JsonResponse
     {
         $policy = $this->passwordPolicy->update($request->validated());

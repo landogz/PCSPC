@@ -13,10 +13,16 @@ use Illuminate\Http\Request;
 
 class DepartmentController extends Controller
 {
+    /**
+     * Inject the department service.
+     */
     public function __construct(
         private readonly DepartmentService $departments,
     ) {}
 
+    /**
+     * List departments with search, status filters, and pagination.
+     */
     public function index(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->integer('per_page', 10), 1), 100);
@@ -37,6 +43,9 @@ class DepartmentController extends Controller
         ]);
     }
 
+    /**
+     * Create a new department record.
+     */
     public function store(StoreDepartmentRequest $request): JsonResponse
     {
         $department = $this->departments->create($request->validated());
@@ -46,6 +55,9 @@ class DepartmentController extends Controller
         ], 201);
     }
 
+    /**
+     * Return a single department by UUID.
+     */
     public function show(string $department): JsonResponse
     {
         $model = $this->departments->find($department);
@@ -55,6 +67,9 @@ class DepartmentController extends Controller
         ]);
     }
 
+    /**
+     * Update an existing department.
+     */
     public function update(UpdateDepartmentRequest $request, string $department): JsonResponse
     {
         $model = $this->departments->update($department, $request->validated());
@@ -64,6 +79,9 @@ class DepartmentController extends Controller
         ]);
     }
 
+    /**
+     * Permanently delete a department.
+     */
     public function destroy(string $department): JsonResponse
     {
         $this->departments->delete($department);

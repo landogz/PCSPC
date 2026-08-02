@@ -4,6 +4,7 @@ import { toastSuccess, toastError, confirmAction } from '../../utils/toast';
 import { createServerTable, escapeHtml, statusBadge, rowActionsCell, cardActions } from '../../utils/server-table';
 import { openModal, closeModal } from '../../utils/modal';
 import { initEmployeeSearch } from '../../utils/employee-search';
+import { openSchedulePrintWindow } from './print';
 
 function clearErrors(form) {
     form.querySelectorAll('[data-error]').forEach((el) => {
@@ -61,7 +62,9 @@ export function initSchedulesModule() {
 
     const panel = root.querySelector('[data-spa-module="schedules-table"]');
     const modal = document.getElementById('schedule-modal');
+    const printModal = document.getElementById('schedule-print-modal');
     const form = document.getElementById('schedule-form');
+    const printForm = document.getElementById('schedule-print-form');
     const title = modal?.querySelector('[data-modal-title]');
     const searchInput = panel?.querySelector('[data-filter="search"]');
     const shiftFilter = panel?.querySelector('[data-filter="shift_id"]');
@@ -70,8 +73,11 @@ export function initSchedulesModule() {
     const effectiveFilter = panel?.querySelector('[data-filter="effective"]');
     const shiftSelect = form?.querySelector('[data-shift-select]');
     const departmentSelect = form?.querySelector('[data-department-select]');
+    const printDepartmentSelect = printForm?.querySelector('[data-print-department-select]');
     const employeeWrap = form?.querySelector('[data-assignee-employee]');
     const departmentWrap = form?.querySelector('[data-assignee-department]');
+    const printEmployeeWrap = printForm?.querySelector('[data-print-employee]');
+    const printDepartmentWrap = printForm?.querySelector('[data-print-department]');
     let editingId = null;
     let meta = { shifts: [], departments: [] };
 
@@ -80,13 +86,16 @@ export function initSchedulesModule() {
     }
 
     const employeeSearch = initEmployeeSearch(form.querySelector('[data-employee-search-root]'));
+    const printEmployeeSearch = printForm
+        ? initEmployeeSearch(printForm.querySelector('[data-employee-search-root]'))
+        : null;
 
-    function fillSelect(select, items, { blankLabel = 'All' } = {}) {
+    function fillSelect(select, items, { blankLabel = 'All', preferBlankLabel = false } = {}) {
         if (!select) {
             return;
         }
         const current = select.value;
-        const isFilter = select.hasAttribute('data-filter');
+        const isFilter = select.hasAttribute('data-filter') || preferBlankLabel;
         select.innerHTML = isFilter
             ? `<option value="">${escapeHtml(blankLabel)}</option>`
             : '<option value="">— Select —</option>';
@@ -108,6 +117,31 @@ export function initSchedulesModule() {
         if (departmentSelect) {
             departmentSelect.required = type === 'department';
         }
+    }
+
+    function syncPrintScopeUi() {
+        if (!printForm) {
+            return;
+        }
+        const scope = printForm.querySelector('input[name="scope"]:checked')?.value || 'employee';
+        printEmployeeWrap?.classList.toggle('hidden', scope !== 'employee');
+        printDepartmentWrap?.classList.toggle('hidden', scope !== 'department');
+    }
+
+    function openPrintModal() {
+        if (!printModal || !printForm) {
+            return;
+        }
+        printForm.reset();
+        printForm.querySelector('input[name="scope"][value="employee"]').checked = true;
+        printForm.effective.value = 'current';
+        printForm.include_related.checked = true;
+        printEmployeeSearch?.clear();
+        if (printDepartmentSelect) {
+            printDepartmentSelect.value = '';
+        }
+        syncPrintScopeUi();
+        openModal(printModal);
     }
 
     function setEffectiveTab(value) {
@@ -279,12 +313,62 @@ export function initSchedulesModule() {
     }
 
     panel.querySelector('[data-action="create"]')?.addEventListener('click', openCreate);
+    root.querySelector('[data-action="print-schedules"]')?.addEventListener('click', openPrintModal);
     modal.querySelectorAll('[data-modal-dismiss]').forEach((el) => {
         el.addEventListener('click', () => closeModal(modal));
+    });
+    printModal?.querySelectorAll('[data-modal-dismiss]').forEach((el) => {
+        el.addEventListener('click', () => closeModal(printModal));
     });
 
     form.querySelectorAll('[data-assignee-type]').forEach((el) => {
         el.addEventListener('change', syncAssigneeUi);
+    });
+    printForm?.querySelectorAll('[data-print-scope]').forEach((el) => {
+        el.addEventListener('change', syncPrintScopeUi);
+    });
+
+    printForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const scope = printForm.querySelector('input[name="scope"]:checked')?.value || 'employee';
+        const params = {
+            scope,
+            effective: printForm.effective.value || 'current',
+            include_related: printForm.include_related.checked ? 1 : 0,
+        };
+        if (scope === 'employee') {
+            const employeeId = printEmployeeSearch?.getValue() || '';
+            if (employeeId) {
+                params.employee_id = employeeId;
+            }
+        } else {
+            const departmentId = printForm.department_id.value || '';
+            if (departmentId) {
+                params.department_id = departmentId;
+            }
+        }
+
+        const submit = printForm.querySelector('[type="submit"]');
+        setButtonLoading(submit, true, 'Preparing…');
+        try {
+            const { data } = await http.get('/schedules/print', { params });
+            const report = data?.data;
+            if (!report) {
+                toastError('Unable to prepare print report');
+                return;
+            }
+            openSchedulePrintWindow(report);
+            closeModal(printModal);
+            if (!(report.groups || []).length) {
+                toastError('No schedules matched this print selection');
+            } else {
+                toastSuccess('Print preview opened');
+            }
+        } catch (error) {
+            toastError(error.response?.data?.message || error.message || 'Unable to print schedules');
+        } finally {
+            setButtonLoading(submit, false);
+        }
     });
 
     root.querySelectorAll('[data-effective-tab]').forEach((btn) => {
@@ -352,6 +436,10 @@ export function initSchedulesModule() {
             fillSelect(shiftFilter, meta.shifts || [], { blankLabel: 'All shifts' });
             fillSelect(shiftSelect, meta.shifts || []);
             fillSelect(departmentSelect, meta.departments || []);
+            fillSelect(printDepartmentSelect, meta.departments || [], {
+                blankLabel: 'All departments with schedules',
+                preferBlankLabel: true,
+            });
         } catch {
             toastError('Unable to load schedule options');
         }

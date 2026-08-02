@@ -16,10 +16,16 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentController extends Controller
 {
+    /**
+     * Inject the document service.
+     */
     public function __construct(
         private readonly DocumentService $documents,
     ) {}
 
+    /**
+     * List documents with search, category, employee, and expiry filters and pagination.
+     */
     public function index(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->integer('per_page', 10), 1), 100);
@@ -44,6 +50,9 @@ class DocumentController extends Controller
         ]);
     }
 
+    /**
+     * Return aggregate document counts and available categories.
+     */
     public function stats(): JsonResponse
     {
         return ApiResponse::success('Document stats retrieved.', [
@@ -52,6 +61,9 @@ class DocumentController extends Controller
         ]);
     }
 
+    /**
+     * Upload a new document and attach it to an employee when specified.
+     */
     public function store(StoreDocumentRequest $request): JsonResponse
     {
         $document = $this->documents->create(
@@ -65,6 +77,9 @@ class DocumentController extends Controller
         ], 201);
     }
 
+    /**
+     * Return a single document record by UUID.
+     */
     public function show(string $document): JsonResponse
     {
         $model = $this->documents->find($document);
@@ -74,6 +89,9 @@ class DocumentController extends Controller
         ]);
     }
 
+    /**
+     * Update document metadata and optionally replace the stored file.
+     */
     public function update(UpdateDocumentRequest $request, string $document): JsonResponse
     {
         $model = $this->documents->update(
@@ -88,6 +106,9 @@ class DocumentController extends Controller
         ]);
     }
 
+    /**
+     * Permanently delete a single document.
+     */
     public function destroy(string $document): JsonResponse
     {
         $this->documents->delete($document);
@@ -95,6 +116,9 @@ class DocumentController extends Controller
         return ApiResponse::success('Document deleted.');
     }
 
+    /**
+     * Delete multiple documents in one request.
+     */
     public function bulkDestroy(BulkDeleteDocumentsRequest $request): JsonResponse
     {
         $result = $this->documents->bulkDelete($request->validated('ids'));
@@ -107,6 +131,9 @@ class DocumentController extends Controller
         );
     }
 
+    /**
+     * Update the category for multiple documents in one request.
+     */
     public function bulkCategory(BulkCategoryDocumentsRequest $request): JsonResponse
     {
         $result = $this->documents->bulkUpdateCategory(
@@ -122,16 +149,25 @@ class DocumentController extends Controller
         );
     }
 
+    /**
+     * Stream the latest file for a document as a download.
+     */
     public function download(string $document): StreamedResponse
     {
         return $this->documents->download($document);
     }
 
+    /**
+     * Stream the latest file for inline browser preview.
+     */
     public function preview(string $document): StreamedResponse
     {
         return $this->documents->preview($document);
     }
 
+    /**
+     * Stream a specific historical version of a document file.
+     */
     public function downloadVersion(string $document, string $version): StreamedResponse
     {
         return $this->documents->downloadVersion($document, $version);

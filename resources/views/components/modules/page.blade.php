@@ -54,9 +54,9 @@
             <p class="text-sm text-text-secondary">{{ $flowchart }}</p>
             <p class="text-xs text-muted">
                 See interactive flows in
-                <span class="font-medium text-heading">hris-flowcharts</span>
+                <a href="{{ route('docs.show', ['doc' => 'flowcharts']) }}" class="font-medium text-primary hover:underline">Flowcharts</a>
                 and delivery phases in
-                <span class="font-medium text-heading">PROJECT_PLAN.md</span>.
+                <a href="{{ route('docs.show', ['doc' => 'project-plan']) }}" class="font-medium text-primary hover:underline">Project Plan</a>.
             </p>
         </article>
     </div>

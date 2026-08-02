@@ -12,8 +12,12 @@ class DocsPageController extends Controller
     private const ALLOWED = [
         'modules' => 'MODULES.md',
         'project-plan' => 'PROJECT_PLAN.md',
+        'flowcharts' => 'FLOWCHARTS.md',
     ];
 
+    /**
+     * Render an in-app documentation page from a whitelisted markdown file.
+     */
     public function show(string $doc): View
     {
         $file = self::ALLOWED[$doc] ?? null;
@@ -31,6 +35,7 @@ class DocsPageController extends Controller
             'title' => match ($doc) {
                 'modules' => 'Menu ↔ Module Map',
                 'project-plan' => 'Project Plan',
+                'flowcharts' => 'Flowcharts',
                 default => 'Documentation',
             },
             'filename' => $file,

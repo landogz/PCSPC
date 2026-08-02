@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\Schedules;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Schedules\PrintScheduleRequest;
 use App\Http\Requests\Schedules\StoreScheduleRequest;
 use App\Http\Requests\Schedules\UpdateScheduleRequest;
 use App\Http\Resources\Schedules\ScheduleResource;
@@ -13,10 +14,16 @@ use Illuminate\Http\Request;
 
 class ScheduleController extends Controller
 {
+    /**
+     * Inject the schedule service.
+     */
     public function __construct(
         private readonly ScheduleService $schedules,
     ) {}
 
+    /**
+     * Return form metadata such as shifts, departments, and day-of-week options.
+     */
     public function meta(): JsonResponse
     {
         return ApiResponse::success('Schedule meta retrieved.', [
@@ -38,6 +45,19 @@ class ScheduleController extends Controller
         ]);
     }
 
+    /**
+     * Build a printable schedule report for the requested filters and date range.
+     */
+    public function print(PrintScheduleRequest $request): JsonResponse
+    {
+        $report = $this->schedules->printReport($request->validated());
+
+        return ApiResponse::success('Schedule print report ready.', $report);
+    }
+
+    /**
+     * List schedules with search, status, assignee, and effective-date filters and pagination.
+     */
     public function index(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->integer('per_page', 10), 1), 100);
@@ -63,6 +83,9 @@ class ScheduleController extends Controller
         ]);
     }
 
+    /**
+     * Assign a new schedule to an employee or department.
+     */
     public function store(StoreScheduleRequest $request): JsonResponse
     {
         $schedule = $this->schedules->create(
@@ -75,6 +98,9 @@ class ScheduleController extends Controller
         ], 201);
     }
 
+    /**
+     * Return a single schedule assignment by UUID.
+     */
     public function show(string $schedule): JsonResponse
     {
         $model = $this->schedules->find($schedule);
@@ -84,6 +110,9 @@ class ScheduleController extends Controller
         ]);
     }
 
+    /**
+     * Update an existing schedule assignment.
+     */
     public function update(UpdateScheduleRequest $request, string $schedule): JsonResponse
     {
         $model = $this->schedules->update($schedule, $request->validated());
@@ -93,6 +122,9 @@ class ScheduleController extends Controller
         ]);
     }
 
+    /**
+     * Permanently delete a schedule assignment.
+     */
     public function destroy(string $schedule): JsonResponse
     {
         $this->schedules->delete($schedule);

@@ -349,6 +349,17 @@ return [
                     'flowchart' => 'delivery → P8 Hardening & Docs · P9 Training',
                     'summary' => 'Links to project plan, module map, bidding docs, and user manuals (as delivered).',
                 ],
+                [
+                    'key' => 'api-docs',
+                    'label' => 'API Docs',
+                    'route' => 'api-docs',
+                    'icon' => 'ph-code',
+                    'phase' => 'P2–P8',
+                    'permission' => 'dashboard.view',
+                    'req_ids' => ['DOC-PLAN'],
+                    'flowchart' => 'platform → public /api-docs catalog · mobile clients',
+                    'summary' => 'Live /api/v1 reference with multi-language request examples (cURL, PHP, Python, Java, JS, C#).',
+                ],
             ],
         ],
 

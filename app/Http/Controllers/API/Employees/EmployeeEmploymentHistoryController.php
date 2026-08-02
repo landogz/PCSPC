@@ -12,10 +12,16 @@ use Illuminate\Http\JsonResponse;
 
 class EmployeeEmploymentHistoryController extends Controller
 {
+    /**
+     * Inject the employee employment history service.
+     */
     public function __construct(
         private readonly EmployeeEmploymentHistoryService $histories,
     ) {}
 
+    /**
+     * List prior employment history entries for an employee.
+     */
     public function index(string $employee): JsonResponse
     {
         $items = $this->histories->list($employee)->map(
@@ -27,6 +33,9 @@ class EmployeeEmploymentHistoryController extends Controller
         ]);
     }
 
+    /**
+     * Add a prior employment history entry to an employee record.
+     */
     public function store(StoreEmployeeEmploymentHistoryRequest $request, string $employee): JsonResponse
     {
         $history = $this->histories->create($employee, $request->validated());
@@ -36,6 +45,9 @@ class EmployeeEmploymentHistoryController extends Controller
         ], 201);
     }
 
+    /**
+     * Update an existing prior employment history entry.
+     */
     public function update(
         UpdateEmployeeEmploymentHistoryRequest $request,
         string $employee,
@@ -48,6 +60,9 @@ class EmployeeEmploymentHistoryController extends Controller
         ]);
     }
 
+    /**
+     * Remove a prior employment history entry from an employee record.
+     */
     public function destroy(string $employee, string $history): JsonResponse
     {
         $this->histories->delete($employee, $history);

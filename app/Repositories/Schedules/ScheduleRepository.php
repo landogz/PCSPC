@@ -5,6 +5,7 @@ namespace App\Repositories\Schedules;
 use App\Models\ShiftSchedule;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class ScheduleRepository
 {
@@ -21,15 +22,55 @@ class ScheduleRepository
      */
     public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
+        return $this->filteredQuery($filters)
+            ->orderByDesc('effective_from')
+            ->orderByDesc('id')
+            ->paginate($perPage);
+    }
+
+    /**
+     * @param  array{
+     *   search?: string,
+     *   status?: string,
+     *   shift_id?: string,
+     *   assignee_type?: string,
+     *   employee_id?: string,
+     *   department_id?: string,
+     *   effective?: string
+     * }  $filters
+     * @return Collection<int, ShiftSchedule>
+     */
+    public function listForPrint(array $filters = [], int $limit = 500): Collection
+    {
+        return $this->filteredQuery($filters)
+            ->orderBy('assignee_type')
+            ->orderByDesc('effective_from')
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * @param  array{
+     *   search?: string,
+     *   status?: string,
+     *   shift_id?: string,
+     *   assignee_type?: string,
+     *   employee_id?: string,
+     *   department_id?: string,
+     *   effective?: string
+     * }  $filters
+     */
+    private function filteredQuery(array $filters = []): Builder
+    {
         $query = ShiftSchedule::query()
             ->with([
                 'shift:id,uuid,code,name,time_in,time_out,break_minutes,grace_minutes,crosses_midnight,is_active',
                 'employee:id,uuid,employee_number,first_name,last_name,email,department_id',
+                'employee.department:id,uuid,code,name',
                 'department:id,uuid,code,name',
                 'creator:id,name,email',
-            ])
-            ->orderByDesc('effective_from')
-            ->orderByDesc('id');
+            ]);
 
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
@@ -95,7 +136,7 @@ class ScheduleRepository
                 ->whereDate('effective_to', '<', now()->toDateString());
         }
 
-        return $query->paginate($perPage);
+        return $query;
     }
 
     public function findByUuid(string $uuid): ?ShiftSchedule
@@ -104,6 +145,7 @@ class ScheduleRepository
             ->with([
                 'shift:id,uuid,code,name,time_in,time_out,break_minutes,grace_minutes,crosses_midnight,is_active',
                 'employee:id,uuid,employee_number,first_name,last_name,email,department_id',
+                'employee.department:id,uuid,code,name',
                 'department:id,uuid,code,name',
                 'creator:id,name,email',
             ])
@@ -130,6 +172,7 @@ class ScheduleRepository
         return $schedule->fresh([
             'shift:id,uuid,code,name,time_in,time_out,break_minutes,grace_minutes,crosses_midnight,is_active',
             'employee:id,uuid,employee_number,first_name,last_name,email,department_id',
+            'employee.department:id,uuid,code,name',
             'department:id,uuid,code,name',
             'creator:id,name,email',
         ]) ?? $schedule;

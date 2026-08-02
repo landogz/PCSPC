@@ -11,10 +11,16 @@ use Illuminate\Http\JsonResponse;
 
 class SystemParameterController extends Controller
 {
+    /**
+     * Inject the system parameter service.
+     */
     public function __construct(
         private readonly SystemParameterService $parameters,
     ) {}
 
+    /**
+     * Return current system parameters and configuration metadata.
+     */
     public function show(): JsonResponse
     {
         return ApiResponse::success('System parameters retrieved.', [
@@ -23,6 +29,9 @@ class SystemParameterController extends Controller
         ]);
     }
 
+    /**
+     * Update editable system parameter values.
+     */
     public function update(UpdateSystemParametersRequest $request): JsonResponse
     {
         $parameters = $this->parameters->update($request->validated());
@@ -33,6 +42,9 @@ class SystemParameterController extends Controller
         ]);
     }
 
+    /**
+     * Upload and store a new company logo image.
+     */
     public function uploadLogo(UploadSystemLogoRequest $request): JsonResponse
     {
         $parameters = $this->parameters->storeLogo($request->file('logo'));
@@ -43,6 +55,9 @@ class SystemParameterController extends Controller
         ]);
     }
 
+    /**
+     * Remove the custom company logo and revert to the default.
+     */
     public function removeLogo(): JsonResponse
     {
         $parameters = $this->parameters->clearLogo();

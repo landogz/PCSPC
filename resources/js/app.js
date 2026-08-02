@@ -16,6 +16,7 @@ import { initDocumentsModule } from './modules/documents';
 import { initLookupsModule } from './modules/lookups';
 import { initSchedulesModule } from './modules/schedules';
 import { initDashboardModule } from './modules/dashboard';
+import { initApiDocsModule } from './modules/api-docs';
 
 initLayoutModule();
 initAuthModule();
@@ -33,3 +34,4 @@ initDocumentsModule();
 initLookupsModule();
 initSchedulesModule();
 initDashboardModule();
+initApiDocsModule();

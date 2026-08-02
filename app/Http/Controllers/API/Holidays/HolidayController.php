@@ -13,10 +13,16 @@ use Illuminate\Http\Request;
 
 class HolidayController extends Controller
 {
+    /**
+     * Inject the holiday service.
+     */
     public function __construct(
         private readonly HolidayService $holidays,
     ) {}
 
+    /**
+     * List holidays with search, status, type, year filters, and pagination.
+     */
     public function index(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->integer('per_page', 10), 1), 100);
@@ -40,6 +46,9 @@ class HolidayController extends Controller
         ]);
     }
 
+    /**
+     * Create a new holiday record.
+     */
     public function store(StoreHolidayRequest $request): JsonResponse
     {
         $holiday = $this->holidays->create($request->validated());
@@ -49,6 +58,9 @@ class HolidayController extends Controller
         ], 201);
     }
 
+    /**
+     * Return a single holiday by UUID.
+     */
     public function show(string $holiday): JsonResponse
     {
         $model = $this->holidays->find($holiday);
@@ -58,6 +70,9 @@ class HolidayController extends Controller
         ]);
     }
 
+    /**
+     * Update an existing holiday record.
+     */
     public function update(UpdateHolidayRequest $request, string $holiday): JsonResponse
     {
         $model = $this->holidays->update($holiday, $request->validated());
@@ -67,6 +82,9 @@ class HolidayController extends Controller
         ]);
     }
 
+    /**
+     * Permanently delete a holiday record.
+     */
     public function destroy(string $holiday): JsonResponse
     {
         $this->holidays->delete($holiday);

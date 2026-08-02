@@ -13,10 +13,16 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    /**
+     * Inject the user service.
+     */
     public function __construct(
         private readonly UserService $users,
     ) {}
 
+    /**
+     * List user accounts with search, status, and role filters and pagination.
+     */
     public function index(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->integer('per_page', 10), 1), 100);
@@ -38,6 +44,9 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Create a new user account linked to an employee when applicable.
+     */
     public function store(StoreUserRequest $request): JsonResponse
     {
         $user = $this->users->create($request->validated());
@@ -47,6 +56,9 @@ class UserController extends Controller
         ], 201);
     }
 
+    /**
+     * Search employees eligible for account linking during user creation.
+     */
     public function searchEmployees(Request $request): JsonResponse
     {
         $items = $this->users->searchEmployees((string) $request->query('search', ''));
@@ -56,6 +68,9 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Return a single user account by UUID.
+     */
     public function show(string $user): JsonResponse
     {
         $model = $this->users->find($user);
@@ -65,6 +80,9 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Update user account details, roles, and linked employee.
+     */
     public function update(UpdateUserRequest $request, string $user): JsonResponse
     {
         $model = $this->users->update($user, $request->validated(), $request->user());
@@ -74,6 +92,9 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Clear lockout state and restore login access for a user.
+     */
     public function unlock(string $user): JsonResponse
     {
         $model = $this->users->unlock($user);
@@ -83,6 +104,9 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Deactivate a user account while preventing self-deactivation.
+     */
     public function deactivate(Request $request, string $user): JsonResponse
     {
         $model = $this->users->deactivate($user, $request->user());
@@ -92,6 +116,9 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Permanently delete a user account while preventing self-deletion.
+     */
     public function destroy(Request $request, string $user): JsonResponse
     {
         $this->users->delete($user, $request->user());
@@ -99,6 +126,9 @@ class UserController extends Controller
         return ApiResponse::success('User deleted.');
     }
 
+    /**
+     * Return assignable roles for user create and edit forms.
+     */
     public function roles(): JsonResponse
     {
         $roles = $this->users->roles()->map(fn ($role) => [

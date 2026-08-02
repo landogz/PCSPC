@@ -167,6 +167,9 @@
             <span class="inline-flex items-center gap-1">
                 <i class="ph ph-lock-key text-success"></i>Activity logged
             </span>
+            <a href="{{ route('api-docs') }}" class="inline-flex items-center gap-1 hover:text-heading transition-colors">
+                <i class="ph ph-code"></i>API docs
+            </a>
         </div>
 
         <p class="text-center text-[11px] text-faint mt-4">

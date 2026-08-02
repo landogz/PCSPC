@@ -80,7 +80,7 @@ class Navigation
     }
 
     /**
-     * Keys that use the modules.show route (exclude dashboard).
+     * Keys that use the modules.show route (exclude dashboard / named routes).
      *
      * @return list<string>
      */
@@ -88,7 +88,12 @@ class Navigation
     {
         return array_values(array_filter(
             array_keys(self::modulesByKey()),
-            static fn (string $key): bool => $key !== 'dashboard'
+            static function (string $key): bool {
+                $item = self::find($key);
+                $route = $item['route'] ?? 'modules.show';
+
+                return $route === 'modules.show';
+            }
         ));
     }
 
@@ -126,18 +131,27 @@ class Navigation
             return route('dashboard');
         }
 
-        return route('modules.show', ['module' => $item['key']]);
+        if ($route === 'modules.show') {
+            return route('modules.show', ['module' => $item['key']]);
+        }
+
+        return route($route);
     }
 
     public static function isActive(array $item): bool
     {
         $key = $item['key'] ?? null;
+        $route = $item['route'] ?? 'modules.show';
 
-        if ($key === 'dashboard') {
+        if ($key === 'dashboard' || $route === 'dashboard') {
             return request()->routeIs('dashboard');
         }
 
-        return request()->routeIs('modules.show')
-            && request()->route('module') === $key;
+        if ($route === 'modules.show') {
+            return request()->routeIs('modules.show')
+                && request()->route('module') === $key;
+        }
+
+        return request()->routeIs($route);
     }
 }

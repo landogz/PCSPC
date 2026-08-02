@@ -138,4 +138,75 @@ class ScheduleModuleTest extends TestCase
             ->assertStatus(422)
             ->assertJsonValidationErrors(['employee_id']);
     }
+
+    public function test_admin_can_print_schedules_per_employee_and_department(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
+        $employee = Employee::query()->where('employee_number', 'EMP-0001')->firstOrFail();
+        $department = Department::query()->firstOrFail();
+        $shift = Shift::query()->where('is_active', true)->firstOrFail();
+
+        $this->actingAs($admin)->postJson('/api/v1/schedules', [
+            'shift_id' => $shift->uuid,
+            'assignee_type' => 'employee',
+            'employee_id' => $employee->uuid,
+            'effective_from' => now()->toDateString(),
+            'days_of_week' => [1, 2, 3, 4, 5],
+            'is_active' => true,
+        ])->assertCreated();
+
+        $this->actingAs($admin)->postJson('/api/v1/schedules', [
+            'shift_id' => $shift->uuid,
+            'assignee_type' => 'department',
+            'department_id' => $department->uuid,
+            'effective_from' => now()->toDateString(),
+            'days_of_week' => [1, 2, 3, 4, 5],
+            'is_active' => true,
+        ])->assertCreated();
+
+        $employeePrint = $this->actingAs($admin)
+            ->getJson('/api/v1/schedules/print?scope=employee&effective=current&include_related=1')
+            ->assertOk()
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('data.scope', 'employee')
+            ->assertJsonPath('data.orientation', 'landscape')
+            ->assertJsonStructure([
+                'data' => [
+                    'title',
+                    'company' => ['name', 'logo_url'],
+                    'groups',
+                    'totals' => ['groups', 'rows'],
+                ],
+            ]);
+
+        $this->assertGreaterThanOrEqual(1, count($employeePrint->json('data.groups')));
+
+        $departmentPrint = $this->actingAs($admin)
+            ->getJson('/api/v1/schedules/print?scope=department&effective=current&include_related=1')
+            ->assertOk()
+            ->assertJsonPath('data.scope', 'department');
+
+        $this->assertGreaterThanOrEqual(1, count($departmentPrint->json('data.groups')));
+
+        $this->actingAs($admin)
+            ->getJson('/api/v1/schedules/print?scope=employee&employee_id='.$employee->uuid)
+            ->assertOk()
+            ->assertJsonPath('data.groups.0.key', $employee->uuid);
+
+        $employeeUser = User::query()->where('email', 'employee@pcspc.local')->firstOrFail();
+        $this->actingAs($employeeUser)
+            ->getJson('/api/v1/schedules/print?scope=employee')
+            ->assertForbidden();
+    }
+
+    public function test_schedules_module_exposes_print_action(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get('/modules/schedules')
+            ->assertOk()
+            ->assertSee('Print schedules', false)
+            ->assertSee('schedule-print-modal', false);
+    }
 }

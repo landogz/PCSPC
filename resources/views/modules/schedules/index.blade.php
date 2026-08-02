@@ -20,9 +20,14 @@
                     <span class="inline-flex items-center h-7 px-2.5 rounded-lg bg-primary-soft text-primary text-[11px] font-semibold">Phase P3</span>
                 </div>
             </div>
-            <a href="{{ route('modules.show', ['module' => 'shifts']) }}" class="inline-flex items-center justify-center gap-1.5 h-10 min-h-[44px] px-4 rounded-xl border border-border text-sm font-medium hover:bg-subtle whitespace-nowrap">
-                <i class="ph ph-clock"></i> Shift templates
-            </a>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <button type="button" data-action="print-schedules" class="inline-flex items-center justify-center gap-1.5 h-10 min-h-[44px] px-4 rounded-xl border border-border text-sm font-medium hover:bg-subtle whitespace-nowrap">
+                    <i class="ph ph-printer"></i> Print schedules
+                </button>
+                <a href="{{ route('modules.show', ['module' => 'shifts']) }}" class="inline-flex items-center justify-center gap-1.5 h-10 min-h-[44px] px-4 rounded-xl border border-border text-sm font-medium hover:bg-subtle whitespace-nowrap">
+                    <i class="ph ph-clock"></i> Shift templates
+                </a>
+            </div>
         </div>
     </div>
 
@@ -73,6 +78,70 @@
         </x-slot:head>
 
         <x-slot:modals>
+            <x-ui.modal id="schedule-print-modal" title="Print schedules" subtitle="Landscape A4 report — per employee or per department" max-width="max-w-lg">
+                <form id="schedule-print-form" class="flex min-h-0 flex-1 flex-col" novalidate>
+                    <div class="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-5">
+                        <div>
+                            <label class="ui-label ui-label-required">Layout</label>
+                            <div class="grid grid-cols-2 gap-2 mt-1">
+                                <label class="inline-flex items-center justify-center gap-2 h-10 min-h-[44px] rounded-xl border border-border px-3 text-sm cursor-pointer has-[:checked]:bg-primary-soft has-[:checked]:border-primary/40 has-[:checked]:text-primary">
+                                    <input type="radio" name="scope" value="employee" class="sr-only" checked data-print-scope>
+                                    <i class="ph ph-user"></i> Per employee
+                                </label>
+                                <label class="inline-flex items-center justify-center gap-2 h-10 min-h-[44px] rounded-xl border border-border px-3 text-sm cursor-pointer has-[:checked]:bg-primary-soft has-[:checked]:border-primary/40 has-[:checked]:text-primary">
+                                    <input type="radio" name="scope" value="department" class="sr-only" data-print-scope>
+                                    <i class="ph ph-buildings"></i> Per department
+                                </label>
+                            </div>
+                        </div>
+
+                        <div data-print-employee>
+                            <x-ui.employee-search
+                                name="employee_id"
+                                id="schedule-print-employee"
+                                label="Employee"
+                                :required="false"
+                                hint="Leave blank to print all employees with schedules."
+                            />
+                        </div>
+
+                        <div class="hidden" data-print-department>
+                            <label class="ui-label" for="schedule-print-department">Department</label>
+                            <select id="schedule-print-department" name="department_id" class="ui-select" data-print-department-select>
+                                <option value="">All departments with schedules</option>
+                            </select>
+                            <p class="text-xs text-muted mt-1">Leave as “All” to print every department that has assignments.</p>
+                        </div>
+
+                        <div>
+                            <label class="ui-label" for="schedule-print-effective">Period</label>
+                            <select id="schedule-print-effective" name="effective" class="ui-select">
+                                <option value="current" selected>Current</option>
+                                <option value="upcoming">Upcoming</option>
+                                <option value="ended">Ended</option>
+                                <option value="all">All periods</option>
+                            </select>
+                        </div>
+
+                        <label class="inline-flex items-start gap-2 text-sm text-heading">
+                            <input type="checkbox" name="include_related" value="1" checked class="mt-0.5 rounded border-border">
+                            <span>
+                                Include related schedules
+                                <span class="block text-xs text-muted font-normal mt-0.5">
+                                    Employee print shows department defaults; department print lists employee overrides.
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="flex flex-shrink-0 flex-col-reverse gap-2 border-t border-border bg-surface p-4 sm:flex-row sm:justify-end sm:gap-3 sm:p-5">
+                        <button type="button" data-modal-dismiss class="ui-btn-secondary min-h-[44px] px-5">Cancel</button>
+                        <button type="submit" class="ui-btn-primary min-h-[44px] min-w-[9rem]">
+                            <i class="ph ph-printer"></i> Print landscape
+                        </button>
+                    </div>
+                </form>
+            </x-ui.modal>
+
             <x-ui.modal id="schedule-modal" title="Assign schedule" subtitle="Link a shift template to an employee or department" max-width="max-w-lg">
                 <form id="schedule-form" class="flex min-h-0 flex-1 flex-col" novalidate>
                     <div class="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-5">

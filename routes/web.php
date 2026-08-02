@@ -18,6 +18,7 @@ use App\Http\Controllers\API\Employees\EmployeeCareerHistoryController;
 use App\Http\Controllers\API\Employees\EmployeeEmploymentHistoryController;
 use App\Http\Controllers\API\Security\RoleController as SecurityRoleController;
 use App\Http\Controllers\API\Security\UserController as SecurityUserController;
+use App\Http\Controllers\Web\ApiDocsController;
 use App\Http\Controllers\Web\DocsPageController;
 use App\Http\Controllers\Web\ModulePageController;
 use App\Support\Navigation;
@@ -29,6 +30,11 @@ Route::get('/', function () {
         ? redirect()->route('dashboard')
         : redirect()->route('login');
 });
+
+Route::get('/api-docs', [ApiDocsController::class, 'index'])->name('api-docs');
+Route::get('/api-docs.json', [ApiDocsController::class, 'json'])
+    ->middleware('throttle:60,1')
+    ->name('api-docs.json');
 
 Route::middleware('guest')->group(function (): void {
     Route::view('/login', 'auth.login')->name('login');
@@ -42,7 +48,7 @@ Route::middleware(['auth', 'password.current'])->group(function (): void {
         ->name('modules.show');
 
     Route::get('/docs/{doc}', [DocsPageController::class, 'show'])
-        ->whereIn('doc', ['modules', 'project-plan'])
+        ->whereIn('doc', ['modules', 'project-plan', 'flowcharts'])
         ->name('docs.show');
 });
 
@@ -155,6 +161,7 @@ Route::prefix('api/v1')->middleware(['auth:sanctum', 'password.current'])->group
 
         Route::prefix('schedules')->group(function (): void {
             Route::get('/meta', [ScheduleController::class, 'meta']);
+            Route::get('/print', [ScheduleController::class, 'print'])->middleware('throttle:30,1');
             Route::get('/', [ScheduleController::class, 'index']);
             Route::post('/', [ScheduleController::class, 'store']);
             Route::get('/{schedule}', [ScheduleController::class, 'show']);

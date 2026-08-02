@@ -12,10 +12,16 @@ use Illuminate\Http\JsonResponse;
 
 class EmployeeEducationController extends Controller
 {
+    /**
+     * Inject the employee education service.
+     */
     public function __construct(
         private readonly EmployeeEducationService $educations,
     ) {}
 
+    /**
+     * List education records and level options for an employee.
+     */
     public function index(string $employee): JsonResponse
     {
         $items = $this->educations->list($employee)->map(
@@ -28,6 +34,9 @@ class EmployeeEducationController extends Controller
         ]);
     }
 
+    /**
+     * Add an education record to an employee profile.
+     */
     public function store(StoreEmployeeEducationRequest $request, string $employee): JsonResponse
     {
         $education = $this->educations->create($employee, $request->validated());
@@ -37,6 +46,9 @@ class EmployeeEducationController extends Controller
         ], 201);
     }
 
+    /**
+     * Update an existing education record for an employee.
+     */
     public function update(UpdateEmployeeEducationRequest $request, string $employee, string $education): JsonResponse
     {
         $model = $this->educations->update($employee, $education, $request->validated());
@@ -46,6 +58,9 @@ class EmployeeEducationController extends Controller
         ]);
     }
 
+    /**
+     * Remove an education record from an employee profile.
+     */
     public function destroy(string $employee, string $education): JsonResponse
     {
         $this->educations->delete($employee, $education);
