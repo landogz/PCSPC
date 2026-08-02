@@ -62,6 +62,26 @@
     button {
         cursor: pointer;
     }
+
+    /* Native controls follow theme (date/time icons, select popups, autofill). */
+    html.dark {
+        color-scheme: dark;
+    }
+
+    /*
+     * Form fields must use semantic text color so dark mode stays readable.
+     * (.ui-input / .ui-select also set this; this covers bare Tailwind fields.)
+     */
+    input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='hidden']):not([type='range']):not([type='submit']):not([type='button']):not([type='reset']):not([type='image']),
+    textarea,
+    select {
+        color: var(--color-heading);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--color-faint);
+    }
 }
 
 @layer components {
@@ -79,29 +99,37 @@
         width: 100%;
         height: 3rem;
         border-radius: 10px;
-        border: 1px solid var(--color-n300, #cbd0d8);
-        background-color: var(--color-w1, #ffffff);
+        border: 1px solid var(--color-border-strong, var(--color-n300, #cbd0d8));
+        background-color: var(--color-surface, var(--color-w1, #ffffff));
         padding: 0 0.875rem;
         font-size: 0.875rem;
         line-height: 1.25rem;
-        color: var(--color-n900, #0e1218);
+        color: var(--color-heading, var(--color-n900, #0e1218));
         box-shadow: 0 1px 2px rgb(15 23 42 / 0.03);
         outline: none;
         transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
     }
 
+    textarea.ui-input {
+        height: auto;
+        min-height: 3rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        resize: vertical;
+    }
+
     .ui-input::placeholder {
-        color: var(--color-n400, #94a0b0);
+        color: var(--color-faint, var(--color-n400, #94a0b0));
         font-weight: 400;
     }
 
     .ui-input:hover {
-        border-color: var(--color-n400, #94a0b0);
+        border-color: var(--color-faint, var(--color-n400, #94a0b0));
     }
 
     .ui-input:focus {
         border-color: #64748b;
-        background-color: var(--color-w1, #ffffff);
+        background-color: var(--color-surface, var(--color-w1, #ffffff));
         box-shadow: 0 0 0 3px rgb(100 116 139 / 0.22);
     }
 
@@ -109,9 +137,9 @@
     .ui-input[readonly] {
         cursor: not-allowed;
         opacity: 1;
-        background-color: var(--color-n100, #eef0f3);
-        color: var(--color-n500, #404a60);
-        border-color: var(--color-n200, #e2e5ea);
+        background-color: var(--color-subtle, var(--color-n100, #eef0f3));
+        color: var(--color-muted, var(--color-n500, #404a60));
+        border-color: var(--color-border, var(--color-n200, #e2e5ea));
     }
 
     .ui-input.is-invalid,
@@ -126,12 +154,12 @@
         height: 3rem;
         appearance: none;
         border-radius: 10px;
-        border: 1px solid var(--color-n300, #cbd0d8);
-        background-color: var(--color-w1, #ffffff);
+        border: 1px solid var(--color-border-strong, var(--color-n300, #cbd0d8));
+        background-color: var(--color-surface, var(--color-w1, #ffffff));
         padding: 0 2.5rem 0 0.875rem;
         font-size: 0.875rem;
         line-height: 1.25rem;
-        color: var(--color-n900, #0e1218);
+        color: var(--color-heading, var(--color-n900, #0e1218));
         box-shadow: 0 1px 2px rgb(15 23 42 / 0.03);
         outline: none;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
@@ -142,20 +170,20 @@
     }
 
     .ui-select:hover {
-        border-color: var(--color-n400, #94a0b0);
+        border-color: var(--color-faint, var(--color-n400, #94a0b0));
     }
 
     .ui-select:focus {
         border-color: #64748b;
-        background-color: var(--color-w1, #ffffff);
+        background-color: var(--color-surface, var(--color-w1, #ffffff));
         box-shadow: 0 0 0 3px rgb(100 116 139 / 0.22);
     }
 
     .ui-select:disabled {
         cursor: not-allowed;
-        background-color: var(--color-n100, #eef0f3);
-        color: var(--color-n500, #404a60);
-        border-color: var(--color-n200, #e2e5ea);
+        background-color: var(--color-subtle, var(--color-n100, #eef0f3));
+        color: var(--color-muted, var(--color-n500, #404a60));
+        border-color: var(--color-border, var(--color-n200, #e2e5ea));
     }
 
     .ui-input-icon {
@@ -270,8 +298,7 @@
 
     /* Employee form section navigator */
     .employee-form-nav {
-        background:
-            linear-gradient(180deg, color-mix(in srgb, var(--color-n50, #f7f8fa) 88%, #fff) 0%, var(--color-w1, #ffffff) 100%);
+        background: var(--color-surface, var(--color-w1, #ffffff));
     }
 
     .employee-tabs-wrap {
@@ -288,10 +315,10 @@
         width: 2rem;
         height: 2rem;
         margin-top: 0.35rem;
-        border: 1px solid var(--color-n200, #e2e5ea);
+        border: 1px solid var(--color-border, var(--color-n200, #e2e5ea));
         border-radius: 999px;
-        background: var(--color-w1, #ffffff);
-        color: var(--color-n700, #28303f);
+        background: var(--color-surface, var(--color-w1, #ffffff));
+        color: var(--color-heading, var(--color-n700, #28303f));
         box-shadow: 0 1px 3px rgb(14 18 24 / 0.08);
         transform: translateY(-50%);
         transition:
@@ -328,9 +355,9 @@
     }
 
     .employee-tabs-arrow:hover:not(:disabled) {
-        border-color: color-mix(in srgb, var(--color-primary, #d31219) 35%, var(--color-n200, #e2e5ea));
+        border-color: color-mix(in srgb, var(--color-primary, #d31219) 35%, var(--color-border, #e2e5ea));
         color: var(--color-primary, #d31219);
-        background: color-mix(in srgb, var(--color-primary, #d31219) 6%, #fff);
+        background: color-mix(in srgb, var(--color-primary, #d31219) 12%, var(--color-surface, #fff));
     }
 
     .employee-tabs-arrow:focus-visible {
@@ -342,7 +369,7 @@
     .employee-tabs-arrow[aria-disabled='true'] {
         opacity: 0.35;
         cursor: not-allowed;
-        color: var(--color-n400, #94a0b0);
+        color: var(--color-faint, var(--color-n400, #94a0b0));
         box-shadow: none;
     }
 
@@ -389,7 +416,7 @@
     .employee-tabs-fade {
         background: linear-gradient(
             90deg,
-            color-mix(in srgb, var(--color-n50, #f7f8fa) 88%, #fff),
+            var(--color-surface, #ffffff),
             transparent
         );
     }
@@ -397,7 +424,7 @@
     .employee-tabs-fade-end {
         background: linear-gradient(
             270deg,
-            color-mix(in srgb, var(--color-n50, #f7f8fa) 88%, #fff),
+            var(--color-surface, #ffffff),
             transparent
         );
     }
@@ -420,8 +447,8 @@
         font-size: 0.6875rem;
         font-weight: 600;
         letter-spacing: 0.01em;
-        color: var(--color-n500, #404a60);
-        background: color-mix(in srgb, var(--color-n100, #eef0f3) 55%, transparent);
+        color: var(--color-text-secondary, var(--color-n500, #404a60));
+        background: var(--color-subtle, color-mix(in srgb, var(--color-n100, #eef0f3) 55%, transparent));
         transition:
             color 0.15s ease,
             background-color 0.15s ease,
@@ -439,8 +466,8 @@
         width: 1.75rem;
         height: 1.75rem;
         border-radius: 0.625rem;
-        background: var(--color-w1, #ffffff);
-        color: var(--color-n500, #404a60);
+        background: color-mix(in srgb, var(--color-heading, #0e1218) 8%, var(--color-surface, #ffffff));
+        color: var(--color-heading, var(--color-n700, #28303f));
         box-shadow: 0 1px 2px rgb(14 18 24 / 0.06);
         transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
     }
@@ -448,6 +475,7 @@
     .employee-tab-icon i {
         font-size: 1rem;
         line-height: 1;
+        color: inherit;
     }
 
     .employee-tab-label-full {
@@ -459,12 +487,13 @@
     }
 
     .employee-tab:hover {
-        color: var(--color-n900, #0e1218);
-        background: color-mix(in srgb, var(--color-n100, #eef0f3) 85%, #fff);
+        color: var(--color-heading, var(--color-n900, #0e1218));
+        background: color-mix(in srgb, var(--color-subtle, var(--color-n100, #eef0f3)) 85%, var(--color-surface, #fff));
     }
 
     .employee-tab:hover .employee-tab-icon {
-        color: var(--color-n900, #0e1218);
+        color: var(--color-heading, var(--color-n900, #0e1218));
+        background: color-mix(in srgb, var(--color-heading, #0e1218) 12%, var(--color-surface, #ffffff));
     }
 
     .employee-tab:focus-visible {
@@ -474,17 +503,21 @@
 
     .employee-tab.is-active {
         color: var(--color-primary, #d31219);
-        background: color-mix(in srgb, var(--color-primary, #d31219) 8%, #fff);
+        background: color-mix(in srgb, var(--color-primary, #d31219) 14%, var(--color-surface, #fff));
         border-color: color-mix(in srgb, var(--color-primary, #d31219) 28%, transparent);
         box-shadow:
-            0 1px 2px rgb(211 18 25 / 0.08),
+            0 1px 2px color-mix(in srgb, var(--color-primary, #d31219) 18%, transparent),
             inset 0 0 0 1px color-mix(in srgb, var(--color-primary, #d31219) 8%, transparent);
     }
 
     .employee-tab.is-active .employee-tab-icon {
         background: var(--color-primary, #d31219);
-        color: #fff;
-        box-shadow: 0 4px 10px rgb(211 18 25 / 0.22);
+        color: var(--color-on-primary, #ffffff);
+        box-shadow: 0 4px 10px color-mix(in srgb, var(--color-primary, #d31219) 35%, transparent);
+    }
+
+    .employee-tab.is-active .employee-tab-icon i {
+        color: inherit;
     }
 
     .employee-tab-error {
@@ -496,7 +529,7 @@
         height: 0.5rem;
         border-radius: 999px;
         background-color: var(--color-primary, #d31219);
-        box-shadow: 0 0 0 2px #fff;
+        box-shadow: 0 0 0 2px var(--color-surface, #fff);
         flex-shrink: 0;
     }
 
@@ -506,7 +539,7 @@
 
     .employee-progress-track {
         display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
+        grid-template-columns: repeat(9, minmax(0, 1fr));
         gap: 0.25rem;
         width: 100%;
     }
@@ -514,7 +547,7 @@
     .employee-progress-seg {
         height: 0.3125rem;
         border-radius: 999px;
-        background-color: var(--color-n200, #e2e5ea);
+        background-color: var(--color-border, var(--color-n200, #e2e5ea));
         border: 0;
         transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     }
@@ -524,7 +557,7 @@
     }
 
     .employee-progress-seg.is-current:not(.is-done) {
-        background-color: color-mix(in srgb, var(--color-primary, #d31219) 35%, var(--color-n200, #e2e5ea));
+        background-color: color-mix(in srgb, var(--color-primary, #d31219) 45%, var(--color-border, #e2e5ea));
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary, #d31219) 18%, transparent);
     }
 
@@ -580,14 +613,14 @@
     }
 
     .employee-photo-dropzone {
-        border: 2px dashed var(--color-n300, #cbd0d8);
-        background-color: var(--color-n50, #f7f8fa);
+        border: 2px dashed var(--color-border-strong, var(--color-n300, #cbd0d8));
+        background-color: var(--color-subtle, var(--color-n50, #f7f8fa));
         transition: border-color 0.15s ease, background-color 0.15s ease;
     }
 
     .employee-photo-dropzone:hover {
-        border-color: color-mix(in srgb, var(--color-primary, #d31219) 45%, var(--color-n300, #cbd0d8));
-        background-color: color-mix(in srgb, var(--color-primary, #d31219) 4%, var(--color-n50, #f7f8fa));
+        border-color: color-mix(in srgb, var(--color-primary, #d31219) 45%, var(--color-border-strong, #cbd0d8));
+        background-color: color-mix(in srgb, var(--color-primary, #d31219) 10%, var(--color-subtle, #f7f8fa));
     }
 
     #dependent-modal,
