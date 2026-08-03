@@ -72,5 +72,3 @@ Health check: `GET /api/v1/health`
 - `resources/js/modules/` — feature JS modules (Axios SPA)
 - `resources/js/utils/` — shared Axios / toast / modal helpers
 - `config/api_docs.php` — API docs group labels + endpoint summaries
-
-See `CLAUDE.md` and local `.cursor/rules/` for binding engineering standards (not committed to GitHub).
