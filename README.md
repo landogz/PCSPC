@@ -6,9 +6,10 @@ Laravel 13 API-based SPA foundation for the PCSPC Human Resource Information Sys
 
 - Laravel 13 + PHP 8.3+
 - MySQL (`pcspc`)
-- Laravel Sanctum
+- Laravel Sanctum (SPA session + bearer token for mobile)
 - Tailwind CSS 4 + Vite
-- Axios, SweetAlert2 (confirmations), toast for success/error
+- Axios, SweetAlert2 (confirmations only), toast for success/error
+- DataTables-style listings with actions + context menus
 
 ## Local setup (XAMPP / Artisan)
 
@@ -22,10 +23,10 @@ cp .env.example .env   # if needed
 php artisan key:generate
 php artisan migrate --seed
 npm run build
-php artisan serve
+php artisan serve --host=127.0.0.1 --port=8002
 ```
 
-Open `http://127.0.0.1:8000/login`
+Open `http://127.0.0.1:8002/login` (or the port you chose).
 
 ### Demo accounts (from AuthSeeder)
 
@@ -40,21 +41,36 @@ Open `http://127.0.0.1:8000/login`
 - `POST /api/v1/auth/login` — SPA session, or pass `device_name` for mobile token
 - `POST /api/v1/auth/mfa/verify` — complete MFA
 - `GET /api/v1/auth/me`
+- `GET|PUT /api/v1/auth/profile` — self-service profile
+- `POST|DELETE /api/v1/auth/profile/avatar` — profile photo
+- `POST /api/v1/auth/password` — change password
 - `POST /api/v1/auth/logout`
 - `POST /api/v1/auth/logout-others`
 
 Health check: `GET /api/v1/health`
 
+## Public & in-app surfaces
+
+| Surface | Path | Notes |
+|---------|------|--------|
+| Public API reference | [`/api-docs`](http://127.0.0.1:8002/api-docs) | Live `/api/v1` catalog, Modules sidebar, multi-language examples |
+| API catalog JSON | `/api-docs.json` | Throttled machine-readable catalog |
+| Global search | Topbar / `⌘K` | Modules + people; deep-links employees with `?highlight=` |
+| Notifications | `/modules/notifications` + topbar bell | In-app inbox; dual-channel with email where wired |
+| Project plan | `/docs/project-plan` | Live phase checklist (`docs/PROJECT_PLAN.md`) |
+
 ## Project documents
 
-Bidding / TOR documents live in [`docs/hris-bidding/`](docs/hris-bidding/) (not publicly served).
+- Live plan / modules: [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md), [`docs/MODULES.md`](docs/MODULES.md)
+- Bidding / TOR: [`docs/hris-bidding/`](docs/hris-bidding/) (not publicly served)
 
 ## Architecture folders
 
 - `app/Services/` — business logic
 - `app/Repositories/` — data access
 - `app/Http/Controllers/API/` — thin API controllers
-- `resources/js/modules/` — feature JS modules
-- `resources/js/utils/` — shared Axios / toast helpers
+- `resources/js/modules/` — feature JS modules (Axios SPA)
+- `resources/js/utils/` — shared Axios / toast / modal helpers
+- `config/api_docs.php` — API docs group labels + endpoint summaries
 
-See `CLAUDE.md` and `.cursor/rules/` for binding engineering standards.
+See `CLAUDE.md` and local `.cursor/rules/` for binding engineering standards (not committed to GitHub).
