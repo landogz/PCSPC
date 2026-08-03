@@ -7,14 +7,19 @@ use App\Models\EmployeeCareerHistory;
 use App\Models\EmployeeDependent;
 use App\Models\EmployeeEducation;
 use App\Models\User;
+use App\Mail\Employees\EmployeeWelcomeMail;
 use App\Repositories\Employees\EmployeeRepository;
 use App\Services\Administration\PasswordPolicyService;
 use App\Services\Audit\AuditLogger;
 use App\Services\Exports\XlsxWriter;
 use App\Services\Lookups\LookupService;
+use App\Services\Notifications\NotificationService;
+use App\Support\ProfilePhoto;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -27,6 +32,7 @@ class EmployeeService
         private readonly PasswordPolicyService $passwordPolicy,
         private readonly XlsxWriter $xlsx,
         private readonly LookupService $lookups,
+        private readonly NotificationService $notifications,
     ) {}
 
     /**
@@ -56,7 +62,7 @@ class EmployeeService
                 'employee_number' => $employee->employee_number,
                 'full_name' => $employee->fullName(),
                 'email' => $employee->email,
-                'photo_url' => $employee->photoUrl(),
+                'photo_url' => $employee->photoUrl() ?? ProfilePhoto::forUser($employee->user),
                 'has_account' => $hasAccount,
                 'label' => trim($employee->employee_number.' — '.$employee->fullName()),
             ];
@@ -197,7 +203,7 @@ class EmployeeService
 
     /**
      * @param  array<string, mixed>  $payload
-     * @return array{employee: Employee, temporary_password: string|null}
+     * @return array{employee: Employee, temporary_password: string|null, welcome_email_sent: bool}
      */
     public function create(array $payload, ?UploadedFile $photo = null): array
     {
@@ -215,19 +221,35 @@ class EmployeeService
             return [
                 'employee' => $employee->fresh(['department', 'user.roles']),
                 'temporary_password' => $provision['temporary_password'],
+                'user' => $provision['user'],
             ];
         });
 
         $employee = $result['employee'];
+        $welcomeEmailSent = false;
+
+        if (filled($result['temporary_password']) && $result['user'] instanceof User) {
+            $welcomeEmailSent = $this->sendWelcomeEmail(
+                $result['user'],
+                (string) $result['temporary_password'],
+                (string) $employee->employee_number,
+            );
+        }
+
         $this->audit->log('employee.created', [
             'employee_id' => $employee->uuid,
             'employee_number' => $employee->employee_number,
             'full_name' => $employee->fullName(),
             'account_provisioned' => $result['temporary_password'] !== null || $employee->user_id !== null,
+            'welcome_email_sent' => $welcomeEmailSent,
             'has_photo' => filled($employee->photo_path),
         ]);
 
-        return $result;
+        return [
+            'employee' => $employee,
+            'temporary_password' => $result['temporary_password'],
+            'welcome_email_sent' => $welcomeEmailSent,
+        ];
     }
 
     /**
@@ -320,7 +342,14 @@ class EmployeeService
 
     public function storePhoto(Employee $employee, UploadedFile $photo): Employee
     {
-        $this->deleteStoredPhoto($employee->photo_path);
+        $employee->loadMissing('user');
+        $previousEmployeePhoto = $employee->photo_path;
+        $previousUserAvatar = $employee->user?->avatar_path;
+
+        $this->deleteStoredPhoto($previousEmployeePhoto);
+        if (filled($previousUserAvatar) && $previousUserAvatar !== $previousEmployeePhoto) {
+            $this->deleteStoredPhoto($previousUserAvatar);
+        }
 
         $extension = strtolower($photo->getClientOriginalExtension() ?: $photo->extension() ?: 'jpg');
         $path = $photo->storeAs(
@@ -330,6 +359,10 @@ class EmployeeService
         );
 
         $updated = $this->employees->update($employee, ['photo_path' => $path]);
+
+        if ($updated->user !== null) {
+            $updated->user->forceFill(['avatar_path' => $path])->save();
+        }
 
         $this->audit->log('employee.photo_updated', [
             'employee_id' => $updated->uuid,
@@ -341,11 +374,20 @@ class EmployeeService
 
     public function clearPhoto(Employee $employee): Employee
     {
-        if (! filled($employee->photo_path)) {
+        $employee->loadMissing('user');
+
+        if (! filled($employee->photo_path) && ! filled($employee->user?->avatar_path)) {
             return $employee;
         }
 
         $this->deleteStoredPhoto($employee->photo_path);
+        if (filled($employee->user?->avatar_path) && $employee->user->avatar_path !== $employee->photo_path) {
+            $this->deleteStoredPhoto($employee->user->avatar_path);
+        }
+
+        if ($employee->user !== null) {
+            $employee->user->forceFill(['avatar_path' => null])->save();
+        }
 
         return $this->employees->update($employee, ['photo_path' => null]);
     }
@@ -516,6 +558,55 @@ class EmployeeService
             'user' => $user->fresh(['roles']),
             'temporary_password' => $temporaryPassword,
         ];
+    }
+
+    private function sendWelcomeEmail(User $user, string $temporaryPassword, string $employeeNumber): bool
+    {
+        if (! filled($user->email)) {
+            return false;
+        }
+
+        try {
+            Mail::to($user->email)->send(new EmployeeWelcomeMail(
+                user: $user,
+                temporaryPassword: $temporaryPassword,
+                employeeNumber: $employeeNumber,
+            ));
+
+            $this->notifications->notify(
+                user: $user,
+                type: 'employee.welcome',
+                title: 'Welcome to '.config('app.name'),
+                body: 'Your account is ready. Check your email for temporary login credentials, then sign in and change your password.',
+                actionUrl: url('/login'),
+                meta: [
+                    'employee_number' => $employeeNumber,
+                    'email' => $user->email,
+                ],
+            );
+
+            $this->audit->log('employee.welcome_email_sent', [
+                'user_id' => $user->uuid,
+                'employee_number' => $employeeNumber,
+                'email' => $user->email,
+            ]);
+
+            return true;
+        } catch (\Throwable $exception) {
+            Log::warning('Failed to send employee welcome email.', [
+                'user_id' => $user->uuid,
+                'employee_number' => $employeeNumber,
+                'error' => $exception->getMessage(),
+            ]);
+
+            $this->audit->log('employee.welcome_email_failed', [
+                'user_id' => $user->uuid,
+                'employee_number' => $employeeNumber,
+                'email' => $user->email,
+            ]);
+
+            return false;
+        }
     }
 
     private function syncUserActiveState(Employee $employee): void

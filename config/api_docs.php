@@ -78,6 +78,16 @@ return [
             'description' => 'Employee 201 master file, nested dependents, education, employment history, career history.',
             'order' => 120,
         ],
+        'notifications' => [
+            'label' => 'Notifications',
+            'description' => 'In-app notification inbox, unread counts, and mark-read actions.',
+            'order' => 130,
+        ],
+        'search' => [
+            'label' => 'Search',
+            'description' => 'Global command-palette search across modules and people.',
+            'order' => 140,
+        ],
         'up' => [
             'label' => 'Health',
             'description' => 'Application health / uptime probe.',
@@ -103,6 +113,21 @@ return [
         ],
         'GET api/v1/auth/me' => [
             'summary' => 'Current authenticated user profile and permissions.',
+        ],
+        'GET api/v1/auth/profile' => [
+            'summary' => 'Editable self-service profile (name, avatar).',
+        ],
+        'PUT api/v1/auth/profile' => [
+            'summary' => 'Update display name for the authenticated user.',
+        ],
+        'POST api/v1/auth/profile/avatar' => [
+            'summary' => 'Upload or replace profile photo (JPG/PNG/WebP, max 2 MB).',
+        ],
+        'DELETE api/v1/auth/profile/avatar' => [
+            'summary' => 'Remove the authenticated user profile photo.',
+        ],
+        'POST api/v1/auth/password' => [
+            'summary' => 'Change password (current password + new password meeting policy).',
         ],
         'GET api/v1/dashboard/stats' => [
             'summary' => 'Dashboard KPIs, charts data, attention items, recent activity.',

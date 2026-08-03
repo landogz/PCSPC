@@ -19,23 +19,37 @@ class ProfilePhoto
         return '/storage/'.ltrim(str_replace('\\', '/', $path), '/');
     }
 
+    public static function forPath(?string $path): ?string
+    {
+        if (! filled($path)) {
+            return null;
+        }
+
+        if (! Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        return self::url($path);
+    }
+
     public static function forEmployee(?Employee $employee): ?string
     {
-        if ($employee === null || ! filled($employee->photo_path)) {
+        if ($employee === null) {
             return null;
         }
 
-        if (! Storage::disk('public')->exists($employee->photo_path)) {
-            return null;
-        }
-
-        return self::url($employee->photo_path);
+        return self::forPath($employee->photo_path);
     }
 
     public static function forUser(?User $user): ?string
     {
         if ($user === null) {
             return null;
+        }
+
+        $fromAvatar = self::forPath($user->avatar_path);
+        if ($fromAvatar !== null) {
+            return $fromAvatar;
         }
 
         if ($user->relationLoaded('employee')) {

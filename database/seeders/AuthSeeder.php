@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\UserNotification;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -155,6 +156,56 @@ class AuthSeeder extends Seeder
             'employment_status' => 'active',
             'date_hired' => '2023-11-01',
         ]);
+
+        $this->seedDemoNotifications($demoEmployee, $admin);
+    }
+
+    private function seedDemoNotifications(User $employee, User $admin): void
+    {
+        $samples = [
+            [
+                'user' => $employee,
+                'type' => 'employee.welcome',
+                'title' => 'Welcome to '.config('app.name'),
+                'body' => 'Your self-service account is ready. Use Leave, Timekeeping, and Overtime from the sidebar.',
+                'action_url' => url('/dashboard'),
+            ],
+            [
+                'user' => $employee,
+                'type' => 'system.announcement',
+                'title' => 'Complete your profile',
+                'body' => 'Add a profile photo and keep your contact details up to date from Edit profile.',
+                'action_url' => url('/dashboard'),
+            ],
+            [
+                'user' => $admin,
+                'type' => 'document.expiry_digest',
+                'title' => 'Document expiry reminder',
+                'body' => 'Review employee documents that are expiring soon from the Documents module.',
+                'action_url' => url('/modules/documents'),
+            ],
+        ];
+
+        foreach ($samples as $sample) {
+            $exists = UserNotification::query()
+                ->where('user_id', $sample['user']->id)
+                ->where('type', $sample['type'])
+                ->where('title', $sample['title'])
+                ->exists();
+
+            if ($exists) {
+                continue;
+            }
+
+            UserNotification::query()->create([
+                'user_id' => $sample['user']->id,
+                'type' => $sample['type'],
+                'title' => $sample['title'],
+                'body' => $sample['body'],
+                'action_url' => $sample['action_url'],
+                'meta' => ['seeded' => true],
+            ]);
+        }
     }
 
     /**

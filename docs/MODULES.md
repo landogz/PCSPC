@@ -35,7 +35,7 @@ Aligned to:
 | System | Schedules | `/modules/schedules` | P3 | ADM-009 | Administration · employee/dept shift assignment |
 | System | Users & Security | `/modules/security` | P2–P3 | SEC-001…002 · ADM-005 | login MFA/RBAC · password policy |
 | System | Audit Log | `/modules/audit` | P2–P8 | AUD-001 | auth audit events |
-| System | Notifications | `/modules/notifications` | P3–P4 | NOT-001 | leave email notify |
+| System | Notifications | `/modules/notifications` | P3–P4 | NOT-001 | in-app + email; topbar bell |
 | System | Help & Docs | `/modules/help` | P8–P9 | DOC-PLAN | P8 docs · P9 training |
 | System | API Docs | `/api-docs` | P2–P8 | DOC-PLAN | Live `/api/v1` catalog + code examples |
 

@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class EmployeeRepository
 {
@@ -58,7 +59,7 @@ class EmployeeRepository
     {
         $search = trim($search);
         $query = Employee::query()
-            ->with('user:id,uuid,email,employee_number')
+            ->with('user:id,uuid,email,employee_number,avatar_path')
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->limit(max(1, min($limit, 30)));
@@ -151,13 +152,18 @@ class EmployeeRepository
     {
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
-            $query->where(function (Builder $inner) use ($search): void {
-                $inner->where('employee_number', 'like', "%{$search}%")
-                    ->orWhere('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('position_title', 'like', "%{$search}%");
-            });
+            if (Str::isUuid($search)) {
+                $query->where('uuid', $search);
+            } else {
+                $query->where(function (Builder $inner) use ($search): void {
+                    $inner->where('employee_number', 'like', "%{$search}%")
+                        ->orWhere('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('position_title', 'like', "%{$search}%")
+                        ->orWhere('uuid', $search);
+                });
+            }
         }
 
         $status = trim((string) ($filters['status'] ?? ''));

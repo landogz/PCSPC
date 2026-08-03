@@ -38,6 +38,8 @@ class NavigationRbacTest extends TestCase
         $this->assertNotContains('audit', $keys);
         $this->assertNotContains('departments', $keys);
         $this->assertNotContains('employees', $keys);
+        $this->assertNotContains('help', $keys);
+        $this->assertNotContains('api-docs', $keys);
     }
 
     public function test_employee_cannot_open_admin_module_page(): void

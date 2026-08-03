@@ -28,5 +28,8 @@
             @yield('content')
         </div>
     </main>
+
+    <x-layout.account-modals />
+    <x-layout.search-mega />
 </body>
 </html>

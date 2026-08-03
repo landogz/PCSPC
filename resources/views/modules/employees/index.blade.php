@@ -66,7 +66,7 @@
                 id="employee-modal"
                 title="Add employee"
                 subtitle="Fill in the employee's details below"
-                max-width="max-w-3xl"
+                max-width="max-w-6xl"
             >
                 <x-slot:header>
                     <div class="min-w-0 pr-2 pt-1">
@@ -89,7 +89,7 @@
                     <div class="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-5">
                         <div data-temp-password-banner class="hidden rounded-xl border border-primary/30 bg-primary-soft px-3 py-2.5 text-sm">
                             <p class="font-semibold text-heading">Temporary login password</p>
-                            <p class="text-xs text-muted mt-0.5">Share this once with the employee. It will not be shown again.</p>
+                            <p class="text-xs text-muted mt-0.5" data-temp-password-note>Share this once with the employee. It will not be shown again.</p>
                             <div class="mt-2 flex flex-col sm:flex-row gap-2 sm:items-center">
                                 <code data-temp-password class="flex-1 rounded-lg border border-border bg-surface px-3 py-2 font-mono text-sm text-heading"></code>
                                 <button type="button" data-copy-temp-password class="h-10 px-3 rounded-xl border border-border text-sm font-medium">Copy</button>

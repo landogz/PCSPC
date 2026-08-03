@@ -18,6 +18,7 @@ use Laravel\Sanctum\HasApiTokens;
     'uuid',
     'name',
     'email',
+    'avatar_path',
     'employee_number',
     'password',
     'is_active',
@@ -75,6 +76,11 @@ class User extends Authenticatable
     public function authActivityLogs(): HasMany
     {
         return $this->hasMany(AuthActivityLog::class);
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(UserNotification::class);
     }
 
     public function passwordHistories(): HasMany

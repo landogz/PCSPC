@@ -162,4 +162,39 @@ class DashboardStatsTest extends TestCase
     {
         $this->getJson('/api/v1/dashboard/stats')->assertUnauthorized();
     }
+
+    public function test_employee_dashboard_stats_hide_hr_org_metrics(): void
+    {
+        $employee = User::query()->where('email', 'employee@pcspc.local')->firstOrFail();
+
+        $this->actingAs($employee)
+            ->getJson('/api/v1/dashboard/stats')
+            ->assertOk()
+            ->assertJsonPath('data.mode', 'employee')
+            ->assertJsonPath('data.employees.value', null)
+            ->assertJsonPath('data.charts.department_headcount.available', false)
+            ->assertJsonPath('data.activity.items', []);
+    }
+
+    public function test_employee_dashboard_page_hides_hr_widgets(): void
+    {
+        $employee = User::query()->where('email', 'employee@pcspc.local')->firstOrFail();
+
+        $this->actingAs($employee)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('self-service home', false)
+            ->assertDontSee('Needs your attention', false)
+            ->assertDontSee('Headcount by department', false)
+            ->assertDontSee('Payroll & talent snapshot', false);
+    }
+
+    public function test_employee_cannot_open_help_module_page(): void
+    {
+        $employee = User::query()->where('email', 'employee@pcspc.local')->firstOrFail();
+
+        $this->actingAs($employee)
+            ->get('/modules/help')
+            ->assertForbidden();
+    }
 }

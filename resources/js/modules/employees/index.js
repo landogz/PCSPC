@@ -40,6 +40,10 @@ const FIELD_KEYS = [
     'pagibig_number',
 ];
 
+function isUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
+}
+
 function clearErrors(form) {
     form.querySelectorAll('[data-error]').forEach((el) => {
         el.textContent = '';
@@ -135,6 +139,34 @@ export function initEmployeesModule() {
     let educationCount = 0;
     let historyCount = 0;
     let careerCount = 0;
+    let highlightId = null;
+    let highlightHandled = false;
+
+    function rowHighlightClass(rowId) {
+        return highlightId && rowId === highlightId ? ' employee-row-highlight' : '';
+    }
+
+    function applyHighlightInDom() {
+        if (!highlightId || !panel) {
+            return false;
+        }
+        const row = panel.querySelector(`[data-row-id="${CSS.escape(highlightId)}"]`);
+        if (!row) {
+            return false;
+        }
+        row.classList.add('employee-row-highlight');
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return true;
+    }
+
+    function clearHighlightParam() {
+        const url = new URL(window.location.href);
+        if (!url.searchParams.has('highlight')) {
+            return;
+        }
+        url.searchParams.delete('highlight');
+        window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+    }
 
     function rowActionsFor(row) {
         const actions = [{ key: 'view', label: canManage ? 'Edit' : 'View' }];
@@ -167,7 +199,7 @@ export function initEmployeesModule() {
                 : '<span class="text-sm text-muted">Not linked</span>';
 
             return `
-                <tr class="hover:bg-subtle/60" data-row-id="${escapeHtml(row.id)}" data-actions='${JSON.stringify(actions)}'>
+                <tr class="hover:bg-subtle/60${rowHighlightClass(row.id)}" data-row-id="${escapeHtml(row.id)}" data-actions='${JSON.stringify(actions)}'>
                     <td class="px-4 py-3 font-semibold text-heading whitespace-nowrap">${escapeHtml(row.employee_number)}</td>
                     <td class="px-4 py-3">
                         <div class="flex items-center gap-3 min-w-0">
@@ -199,7 +231,7 @@ export function initEmployeesModule() {
 
             return `
                 <article
-                    class="rounded-2xl border border-border bg-surface p-4 flex flex-col gap-3 hover:border-primary/30 transition-colors"
+                    class="rounded-2xl border border-border bg-surface p-4 flex flex-col gap-3 hover:border-primary/30 transition-colors${rowHighlightClass(row.id)}"
                     data-row-id="${escapeHtml(row.id)}"
                     data-actions='${JSON.stringify(actions)}'
                 >
@@ -273,6 +305,22 @@ export function initEmployeesModule() {
                 }
             }
         },
+        onLoaded: async () => {
+            if (!highlightId || highlightHandled) {
+                return;
+            }
+            const found = applyHighlightInDom();
+            if (!found) {
+                return;
+            }
+            highlightHandled = true;
+            clearHighlightParam();
+            try {
+                await openEdit(highlightId);
+            } catch {
+                // Row highlight is enough if modal open fails.
+            }
+        },
     });
 
     function hideTempPassword() {
@@ -282,12 +330,18 @@ export function initEmployeesModule() {
         }
     }
 
-    function showTempPassword(password) {
+    function showTempPassword(password, emailSent = false) {
         if (!password || !tempBanner || !tempPasswordEl) {
             return;
         }
         tempPasswordEl.textContent = password;
         tempBanner.classList.remove('hidden');
+        const note = tempBanner.querySelector('[data-temp-password-note]');
+        if (note) {
+            note.textContent = emailSent
+                ? 'These credentials were also emailed to the employee. Share this once if needed. It will not be shown again.'
+                : 'Share this once with the employee. It will not be shown again.';
+        }
     }
 
     function setLinkedUser(user) {
@@ -904,7 +958,7 @@ export function initEmployeesModule() {
                 fillForm(data.data.employee);
                 editingId = data.data.employee.id;
                 title.textContent = 'Edit employee';
-                showTempPassword(data.data.temporary_password);
+                showTempPassword(data.data.temporary_password, data.data?.welcome_email_sent === true);
                 form.querySelector('.overflow-y-auto')?.scrollTo({ top: 0 });
                 await dependents.reload();
                 await educations.reload();
@@ -945,6 +999,21 @@ export function initEmployeesModule() {
             const statusFromUrl = new URLSearchParams(window.location.search).get('status');
             if (statusFromUrl && statusFilter && meta.statuses?.includes(statusFromUrl)) {
                 statusFilter.value = statusFromUrl;
+            }
+
+            const highlightFromUrl = new URLSearchParams(window.location.search).get('highlight');
+            if (highlightFromUrl && isUuid(highlightFromUrl)) {
+                highlightId = highlightFromUrl;
+                highlightHandled = false;
+                if (searchInput) {
+                    searchInput.value = highlightFromUrl;
+                }
+                if (statusFilter) {
+                    statusFilter.value = '';
+                }
+                if (departmentFilter) {
+                    departmentFilter.value = '';
+                }
             }
         } catch (error) {
             toastError(error.response?.data?.message || 'Unable to load employee meta');

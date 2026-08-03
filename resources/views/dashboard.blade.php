@@ -9,13 +9,15 @@
         auth()->user(),
         Navigation::find($key) ?? [],
     );
+    $isHrDashboard = $can('employees');
 @endphp
 
 @section('content')
-<div data-module="dashboard" class="space-y-3 md:space-y-4">
-{{-- Welcome Hero + Quick Actions + Today's Summary --}}
-<section class="grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4">
-    <div class="lg:col-span-6 2xl:col-span-5 relative overflow-hidden rounded-2xl bg-primary/10 p-5 md:p-6 flex flex-col justify-between min-h-[180px]">
+<div data-module="dashboard" class="space-y-3 md:space-y-4" data-dashboard-mode="{{ $isHrDashboard ? 'hr' : 'employee' }}">
+{{-- Welcome Hero + Quick Actions (+ Today's Summary for HR) --}}
+{{-- Employee: md:grid-cols-2 (Hrivo has this). HR: 12-col + spans that exist in Hrivo. --}}
+<section class="grid grid-cols-1 gap-3 md:gap-4 {{ $isHrDashboard ? 'lg:grid-cols-12' : 'md:grid-cols-2' }}">
+    <div class="{{ $isHrDashboard ? 'lg:col-span-6 2xl:col-span-5' : '' }} relative overflow-hidden rounded-2xl bg-primary/10 p-5 md:p-6 flex flex-col justify-between min-h-[180px]">
         <div class="pointer-events-none absolute -top-8 -right-8 w-40 h-40 rounded-full bg-primary/10"></div>
         <div class="pointer-events-none absolute top-12 -right-4 w-24 h-24 rounded-full bg-primary/8"></div>
         <div class="pointer-events-none absolute -bottom-6 right-16 w-20 h-20 rounded-full bg-primary/6"></div>
@@ -28,7 +30,11 @@
                 Welcome back, <span id="dash-first-name">there</span>!
             </h2>
             <p class="text-text-secondary text-sm mt-1.5">
-                Here's your HR command center for today.
+                @if ($isHrDashboard)
+                    Here's your HR command center for today.
+                @else
+                    Here's your self-service home for today.
+                @endif
             </p>
         </div>
 
@@ -54,15 +60,15 @@
         </div>
     </div>
 
-    <div class="lg:col-span-6 2xl:col-span-4 bg-surface border border-border rounded-2xl p-5 md:p-6 flex flex-col">
-        <h2 class="text-base font-semibold text-heading mb-4">Quick Actions</h2>
-        <div class="grid sm:grid-cols-2 gap-3 flex-1">
+    <div class="{{ $isHrDashboard ? 'lg:col-span-6 2xl:col-span-4' : 'min-w-0' }} bg-surface border border-border rounded-2xl p-5 md:p-6 flex flex-col min-h-0">
+        <h2 class="text-base font-semibold text-heading mb-4 flex-shrink-0">Quick Actions</h2>
+        <div class="{{ $isHrDashboard ? 'grid sm:grid-cols-2 gap-3' : 'grid grid-cols-1 gap-3' }}">
             @if ($can('employees'))
                 <a href="{{ route('modules.show', ['module' => 'employees']) }}" class="flex items-center gap-3 p-3 min-h-[44px] rounded-xl border border-border hover:border-primary/40 hover:bg-primary-soft transition-colors group">
                     <span class="w-9 h-9 rounded-lg bg-primary-soft text-primary flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
                         <i class="ph ph-user-plus text-lg"></i>
                     </span>
-                    <span class="text-sm font-medium text-text group-hover:text-primary transition-colors">Employees</span>
+                    <span class="text-sm font-medium text-text group-hover:text-primary transition-colors truncate">Employees</span>
                 </a>
             @endif
             @if ($can('leave'))
@@ -70,7 +76,7 @@
                     <span class="w-9 h-9 rounded-lg bg-[#e6347f]/12 text-[#e6347f] flex items-center justify-center flex-shrink-0 group-hover:bg-[#e6347f] group-hover:text-white transition-colors">
                         <i class="ph ph-calendar-x text-lg"></i>
                     </span>
-                    <span class="text-sm font-medium text-text group-hover:text-[#e6347f] transition-colors">Leave Request</span>
+                    <span class="text-sm font-medium text-text group-hover:text-[#e6347f] transition-colors truncate">Leave Request</span>
                 </a>
             @endif
             @if ($can('workflow'))
@@ -78,7 +84,7 @@
                     <span class="w-9 h-9 rounded-lg bg-primary-soft text-primary flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
                         <i class="ph ph-git-branch text-lg"></i>
                     </span>
-                    <span class="text-sm font-medium text-text group-hover:text-primary transition-colors">Approvals</span>
+                    <span class="text-sm font-medium text-text group-hover:text-primary transition-colors truncate">Approvals</span>
                 </a>
             @endif
             @if ($can('timekeeping'))
@@ -86,74 +92,85 @@
                     <span class="w-9 h-9 rounded-lg bg-success-soft text-success flex items-center justify-center flex-shrink-0 group-hover:bg-success group-hover:text-white transition-colors">
                         <i class="ph ph-clock-user text-lg"></i>
                     </span>
-                    <span class="text-sm font-medium text-text group-hover:text-success transition-colors">Timekeeping</span>
+                    <span class="text-sm font-medium text-text group-hover:text-success transition-colors truncate">Timekeeping</span>
                 </a>
             @endif
-            @if ($can('medical'))
+            @if ($can('overtime'))
+                <a href="{{ route('modules.show', ['module' => 'overtime']) }}" class="flex items-center gap-3 p-3 min-h-[44px] rounded-xl border border-border hover:border-primary/40 hover:bg-primary-soft transition-colors group">
+                    <span class="w-9 h-9 rounded-lg bg-primary-soft text-primary flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+                        <i class="ph ph-timer text-lg"></i>
+                    </span>
+                    <span class="text-sm font-medium text-text group-hover:text-primary transition-colors truncate">Overtime</span>
+                </a>
+            @endif
+            @if ($isHrDashboard && $can('medical'))
                 <a href="{{ route('modules.show', ['module' => 'medical']) }}" class="flex items-center gap-3 p-3 min-h-[44px] rounded-xl border border-border hover:border-[#f59e0b]/40 hover:bg-[#f59e0b]/10 transition-colors group">
                     <span class="w-9 h-9 rounded-lg bg-[#f59e0b]/15 text-[#f59e0b] flex items-center justify-center flex-shrink-0 group-hover:bg-[#f59e0b] group-hover:text-white transition-colors">
                         <i class="ph ph-heartbeat text-lg"></i>
                     </span>
-                    <span class="text-sm font-medium text-text group-hover:text-[#f59e0b] transition-colors">Medical</span>
+                    <span class="text-sm font-medium text-text group-hover:text-[#f59e0b] transition-colors truncate">Medical</span>
                 </a>
             @endif
         </div>
     </div>
 
-    <div class="lg:col-span-12 2xl:col-span-3 bg-surface border border-border rounded-2xl p-5 md:p-6 flex flex-col">
-        <div class="flex items-center justify-between gap-2 mb-4">
-            <h2 class="text-base font-semibold text-heading">Today's Summary</h2>
-            <span class="text-xs text-muted">{{ now()->format('M j') }}</span>
+    @if ($isHrDashboard)
+        <div class="lg:col-span-12 2xl:col-span-3 bg-surface border border-border rounded-2xl p-5 md:p-6 flex flex-col">
+            <div class="flex items-center justify-between gap-2 mb-4">
+                <h2 class="text-base font-semibold text-heading">Today's Summary</h2>
+                <span class="text-xs text-muted">{{ now()->format('M j') }}</span>
+            </div>
+
+            <div class="flex flex-col gap-4 flex-1">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-success flex-shrink-0"></span>
+                            <span class="text-sm text-text">Check-ins</span>
+                        </div>
+                        <span class="text-sm font-semibold text-heading" data-stat="summary-check-ins">—</span>
+                    </div>
+                    <div class="h-1.5 rounded-full bg-subtle overflow-hidden">
+                        <div class="h-full rounded-full bg-success" data-stat-bar="check-ins" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-warning flex-shrink-0"></span>
+                            <span class="text-sm text-text">On Leave</span>
+                        </div>
+                        <span class="text-sm font-semibold text-heading" data-stat="summary-on-leave">—</span>
+                    </div>
+                    <div class="h-1.5 rounded-full bg-subtle overflow-hidden">
+                        <div class="h-full rounded-full bg-warning" data-stat-bar="on-leave" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-danger flex-shrink-0"></span>
+                            <span class="text-sm text-text">Needs attention</span>
+                        </div>
+                        <span class="text-sm font-semibold text-heading" data-stat="summary-pending">—</span>
+                    </div>
+                    <div class="h-1.5 rounded-full bg-subtle overflow-hidden">
+                        <div class="h-full rounded-full bg-danger" data-stat-bar="pending" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-3 border-t border-border-subtle flex items-center justify-between">
+                    <span class="text-sm text-primary font-medium">Session</span>
+                    <span id="dash-roles" class="text-xs font-semibold text-primary">—</span>
+                </div>
+            </div>
         </div>
-
-        <div class="flex flex-col gap-4 flex-1">
-            <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-success flex-shrink-0"></span>
-                        <span class="text-sm text-text">Check-ins</span>
-                    </div>
-                    <span class="text-sm font-semibold text-heading" data-stat="summary-check-ins">—</span>
-                </div>
-                <div class="h-1.5 rounded-full bg-subtle overflow-hidden">
-                    <div class="h-full rounded-full bg-success" data-stat-bar="check-ins" style="width: 0%"></div>
-                </div>
-            </div>
-
-            <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-warning flex-shrink-0"></span>
-                        <span class="text-sm text-text">On Leave</span>
-                    </div>
-                    <span class="text-sm font-semibold text-heading" data-stat="summary-on-leave">—</span>
-                </div>
-                <div class="h-1.5 rounded-full bg-subtle overflow-hidden">
-                    <div class="h-full rounded-full bg-warning" data-stat-bar="on-leave" style="width: 0%"></div>
-                </div>
-            </div>
-
-            <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-danger flex-shrink-0"></span>
-                        <span class="text-sm text-text">Needs attention</span>
-                    </div>
-                    <span class="text-sm font-semibold text-heading" data-stat="summary-pending">—</span>
-                </div>
-                <div class="h-1.5 rounded-full bg-subtle overflow-hidden">
-                    <div class="h-full rounded-full bg-danger" data-stat-bar="pending" style="width: 0%"></div>
-                </div>
-            </div>
-
-            <div class="mt-auto pt-3 border-t border-border-subtle flex items-center justify-between">
-                <span class="text-sm text-primary font-medium">Session</span>
-                <span id="dash-roles" class="text-xs font-semibold text-primary">—</span>
-            </div>
-        </div>
-    </div>
+    @endif
 </section>
 
+@if ($isHrDashboard)
 {{-- Compact KPI strip --}}
 <section class="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
     <article class="bg-surface border border-border rounded-2xl p-4 flex items-center gap-3">
@@ -374,6 +391,7 @@
         </div>
     </article>
 </section>
+@endif
 
 {{-- Account strip --}}
 <section class="bg-surface border border-border rounded-2xl p-5 md:p-6">
@@ -385,6 +403,11 @@
                 <span class="text-faint">·</span>
                 <span id="dash-email" class="text-text-secondary">—</span>
             </p>
+            @unless ($isHrDashboard)
+                <p class="text-xs text-muted mt-2">
+                    Roles: <span id="dash-roles" class="font-medium text-text">—</span>
+                </p>
+            @endunless
         </div>
         <button type="button" id="logout-others-btn-main" class="inline-flex items-center justify-center gap-1.5 h-10 min-h-[44px] px-4 rounded-xl border border-border bg-surface text-sm font-medium text-text-secondary hover:border-border-strong hover:bg-subtle transition-colors">
             <i class="ph ph-devices text-base"></i>

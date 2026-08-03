@@ -4,7 +4,7 @@
 **Client:** Philippine Coastal Storage & Pipeline Corporation (PCSPC)  
 **Sources:** `docs/hris-bidding/` (Invitation to Bid, TOR, Scope of Work, Annex A, Form of Proposal)  
 **Proposed delivery:** ~36 weeks to Go-Live + **6 months warranty** (duration subject to PCSPC approval)  
-**Plan last updated:** 2026-08-02
+**Plan last updated:** 2026-08-04
 
 Interactive views:
 - Plan: [`/docs/project-plan`](/docs/project-plan) ← phases P0–P10
@@ -26,7 +26,7 @@ Interactive views:
 |-------|--------|-------------|
 | **P0** Procurement | 🔶 | Bid materials in `docs/hris-bidding/`; pre-bid still upcoming |
 | **P1** Discovery & Design | ⬜ | Workshops / SDD / ERD not started |
-| **P2** Platform Foundation | ✅ / 🔶 | **Done:** SPA shell, Sanctum auth, MFA, RBAC, Users & Security, Roles, Audit Log + domain AuditLogger, **ADM-005 password policy**, **Dashboard HR command center**, **public API docs** (`/api-docs` live catalog + sidebar + **per-endpoint** cURL/PHP/Python/Java/JS/C# examples), ApiResponse, FormRequests, nav RBAC, toasts, feature tests. **Open:** PostgreSQL switch, full CI/CD, three envs on GCP; live attendance/leave widgets pending those modules |
+| **P2** Platform Foundation | ✅ / 🔶 | **Done:** SPA shell, Sanctum auth, MFA, RBAC, Users & Security, Roles, Audit Log + domain AuditLogger, **ADM-005 password policy**, **self-service Edit profile + Change password**, **employee-vs-HR dashboard** (self-service hides org KPIs; Help/API Docs menu admin-only), **Dashboard HR command center**, **global search mega menu** (⌘K / topbar), **Notifications** (topbar + module), **public API docs**, ApiResponse, FormRequests, nav RBAC, toasts, feature tests. **Open:** PostgreSQL switch, full CI/CD, three envs on GCP; live attendance/leave widgets pending those modules |
 | **P3** Employee 201 + Admin | ✅ | **Done:** Employees 201 (incl. **career history** — position/category/salary), Departments, Holidays (**ADM-008**), Shifts + **Schedules (ADM-009)**, System parameters (**ADM-010**), **Lookups (ADM-006)** + employment category, Documents (**DOC-001**), Training/Medical stubs. Timekeeping consumption of schedules remains P5. |
 | **P4–P10** | ⬜ | Not started |
 
@@ -180,8 +180,9 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 
 - ✅ Laravel `/api/v1` + SPA shell (Axios, Tailwind, DataTables / server-table patterns)
 - ✅ Sanctum auth, RBAC, MFA (email OTP + resend), password policy/lockout (ADM-005: complexity, expiration, history, force-change)
+- ✅ Self-service profile (`GET|PUT /api/v1/auth/profile`, avatar upload/remove) + Change password modal from topbar user menu; audited (`profile.*`)
 - ✅ `ApiResponse` standard, FormRequest validation, permission middleware
-- ✅ Audit logs (auth events + shared `AuditLogger` for Security / Employees / Departments mutations → `/modules/audit`); 🔶 email notifications skeleton (UI scaffold only)
+- ✅ Audit logs (auth events + shared `AuditLogger` for Security / Employees / Departments mutations → `/modules/audit`); ✅ **Notifications** (in-app inbox + topbar bell + `/api/v1/notifications`; dual-channel with welcome email + document expiry digest); ✅ **employee welcome/login email** (credentials on create)
 - ⬜ **PostgreSQL** schema baseline (still MySQL on local XAMPP)
 - ⬜ Official PCSPC GitHub/repo branching (`feature` → staging → main)
 - 🔶 CI pipeline skeleton (feature tests exist; full SAST/CD not wired)
@@ -194,11 +195,12 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 - ✅ Roles & permissions CRUD; system roles (`super-admin`, `hr-admin`, `employee`) not deletable
 - ✅ Protected platform super-admin (`superadmin@pcspc.local`) — not linked to Employees; cannot delete/deactivate
 - ✅ Employee # **not** free-typed on Security (comes from selected Employees 201 record)
-- ✅ Audit Log module (`/modules/audit`) — lists auth + domain events (`user.*`, `role.*`, `employee.*`, `department.*`)
+- ✅ Audit Log module (`/modules/audit`) — lists auth + domain events (`user.*`, `role.*`, `employee.*`, `department.*`, `profile.*`)
 - ✅ Cursor rule: always write audit on done mutations and verify in Audit module
 - ✅ Navigation filtered by RBAC; module pages 403 without permission
 - ✅ Dark mode, shared modal shell (sticky footer), toast success/error + Swal confirms
 - ✅ Password policy Security UI (`/modules/security` · Password policy tab) + forced change at `/account/password`
+- ✅ Topbar self-service: **Edit profile** (name + photo) and **Change password** modals
 - ✅ Dashboard HR command center (`GET /api/v1/dashboard/stats`) — live KPIs, department headcount + hire/separation charts (Chart.js), pending incomplete profiles, on-leave roster, recent audit activity; attendance/leave/payroll/training widgets stubbed until P4–P7
 
 **Exit (local):** Deployable shell with auth, user/role admin, audit; secrets not in repo.  
@@ -209,7 +211,7 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 ### P3 — Employee 201 + Administration (W8–W11) 🔶
 
 - ✅ Employee master v1 (employment + personal + **encrypted** statutory fields)
-- ✅ Create/update provisions or links a User and assigns **Employee** role; temp password on new login
+- ✅ Create/update provisions or links a User and assigns **Employee** role; temp password on new login; **welcome email** with login URL + email + temporary password (`EmployeeWelcomeMail`)
 - ✅ Deactivate employee syncs linked `user.is_active = false`
 - ✅ Employees SPA (`/modules/employees`) — filters, context menu, Actions column, sectioned tabbed modal (Employment / Personal / Contact / Documents) with post-submit validation UX (human error copy, tab error badges, informational account callout)
 - ✅ Employee profile photo (upload/remove on 201) → wired to linked User `avatar_url`; shown in Employees table, Security users/search, sidebar & topbar
@@ -240,7 +242,7 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 - ⬜ Leave filing with **mandatory reason**; special leave includes HR
 - ⬜ VL / SL / Emergency / Bereavement / Maternity / Paternity / Solo Parent / VAWC / etc.
 - ⬜ OT + OT Meal filings
-- ⬜ Email notifications; **mobile app** self-service for Leave/OT
+- ⬜ Leave/OT email + additional domain notification types beyond welcome/doc-expiry; **mobile app** self-service for Leave/OT
 - ⬜ HR ability to add/delete departments and customize special leave credits  
   *(Departments CRUD already exists under P3 — leave-credit customization still open)*
 
@@ -329,7 +331,7 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 | Timekeeping + Biometric | TM-001…002 | P5 | ⬜ scaffold only |
 | Workflow Engine | WF-001 | P4 | ⬜ scaffold only |
 | Document Management | DOC-001 | P3 | ✅ Drive-style repo: expiry tabs, folders, preview, bulk, versions, digest |
-| Notifications | NOT-001 | P3–P4 | ⬜ scaffold only |
+| Notifications | NOT-001 | P3–P4 | ✅ in-app + email (welcome, doc expiry); topbar bell + `/modules/notifications` |
 | Reporting & Analytics | RPT-001 | P7 | ⬜ scaffold only |
 | Audit & Compliance | AUD-001 | P2–P8 | ✅ auth + domain AuditLogger (users/roles/employees/departments); extend per new module |
 | API & Integration | API-001 | P2–P5 | 🔶 `/api/v1` auth + modules started |

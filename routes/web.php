@@ -4,10 +4,13 @@ use App\Http\Controllers\API\Administration\PasswordPolicyController;
 use App\Http\Controllers\API\Administration\SystemParameterController;
 use App\Http\Controllers\API\Audit\AuditLogController;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\Profile\ProfileController;
 use App\Http\Controllers\API\Dashboard\DashboardController;
 use App\Http\Controllers\API\Documents\DocumentController;
 use App\Http\Controllers\API\Departments\DepartmentController;
 use App\Http\Controllers\API\Lookups\LookupController;
+use App\Http\Controllers\API\Notifications\NotificationController;
+use App\Http\Controllers\API\Search\SearchController;
 use App\Http\Controllers\API\Holidays\HolidayController;
 use App\Http\Controllers\API\Schedules\ScheduleController;
 use App\Http\Controllers\API\Shifts\ShiftController;
@@ -78,6 +81,13 @@ Route::prefix('api/v1/auth')->group(function (): void {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/logout-others', [AuthController::class, 'logoutOthers'])
             ->middleware('password.current');
+
+        Route::middleware('password.current')->prefix('profile')->group(function (): void {
+            Route::get('/', [ProfileController::class, 'show']);
+            Route::put('/', [ProfileController::class, 'update']);
+            Route::post('/avatar', [ProfileController::class, 'uploadAvatar']);
+            Route::delete('/avatar', [ProfileController::class, 'removeAvatar']);
+        });
     });
 });
 
@@ -85,6 +95,19 @@ Route::prefix('api/v1')->middleware(['auth:sanctum', 'password.current'])->group
     Route::middleware('permission:dashboard.view')->prefix('dashboard')->group(function (): void {
         Route::get('/stats', [DashboardController::class, 'stats']);
     });
+
+    // Own inbox — any authenticated user (topbar + /modules/notifications)
+    Route::prefix('notifications')->group(function (): void {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/recent', [NotificationController::class, 'recent']);
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::get('/types', [NotificationController::class, 'types']);
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllRead']);
+        Route::get('/{notification}', [NotificationController::class, 'show']);
+        Route::post('/{notification}/read', [NotificationController::class, 'markRead']);
+    });
+
+    Route::get('/search', SearchController::class)->middleware('throttle:60,1');
 
     Route::middleware('permission:administration.manage')->prefix('administration')->group(function (): void {
         Route::get('/system-parameters', [SystemParameterController::class, 'show']);

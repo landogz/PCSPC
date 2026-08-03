@@ -2,12 +2,14 @@
 
 namespace Tests\Feature\Employees;
 
+use App\Mail\Employees\EmployeeWelcomeMail;
 use App\Models\AuthActivityLog;
 use App\Models\Employee;
 use App\Models\User;
 use Database\Seeders\AuthSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -74,8 +76,23 @@ class EmployeeModuleTest extends TestCase
             ->assertJsonStructure(['data' => ['items', 'meta', 'can_manage']]);
     }
 
+    public function test_search_by_uuid_returns_matching_employee(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
+        $employee = Employee::query()->where('employee_number', 'EMP-1001')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->getJson('/api/v1/employees?search='.$employee->uuid)
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 1)
+            ->assertJsonPath('data.items.0.id', $employee->uuid)
+            ->assertJsonPath('data.items.0.employee_number', 'EMP-1001');
+    }
+
     public function test_create_provisions_user_with_employee_role(): void
     {
+        Mail::fake();
+
         $admin = User::query()->where('email', 'admin@pcspc.local')->firstOrFail();
 
         $response = $this->actingAs($admin)
@@ -91,7 +108,8 @@ class EmployeeModuleTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('status', true)
             ->assertJsonPath('data.employee.email', 'newhire@pcspc.local')
-            ->assertJsonStructure(['data' => ['employee', 'temporary_password']]);
+            ->assertJsonPath('data.welcome_email_sent', true)
+            ->assertJsonStructure(['data' => ['employee', 'temporary_password', 'welcome_email_sent']]);
 
         $temporaryPassword = $response->json('data.temporary_password');
         $this->assertNotEmpty($temporaryPassword);
@@ -101,6 +119,17 @@ class EmployeeModuleTest extends TestCase
         $this->assertSame('EMP-9001', $user->employee_number);
         $this->assertTrue(Employee::query()->where('employee_number', 'EMP-9001')->where('user_id', $user->id)->exists());
         $this->assertTrue(AuthActivityLog::query()->where('event', 'employee.created')->exists());
+
+        Mail::assertSent(EmployeeWelcomeMail::class, function (EmployeeWelcomeMail $mail) use ($user, $temporaryPassword): bool {
+            return $mail->hasTo('newhire@pcspc.local')
+                && $mail->user->is($user)
+                && $mail->temporaryPassword === $temporaryPassword
+                && $mail->employeeNumber === 'EMP-9001';
+        });
+
+        $this->assertTrue(
+            AuthActivityLog::query()->where('event', 'employee.welcome_email_sent')->exists()
+        );
     }
 
     public function test_statutory_fields_are_masked_in_index(): void

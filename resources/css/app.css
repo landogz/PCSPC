@@ -219,6 +219,58 @@
         @apply inline-flex items-center justify-center rounded-xl bg-subtle text-muted transition-colors hover:text-heading hover:bg-n200;
     }
 
+    /*
+     * Topbar notifications panel (ported to <body> in JS).
+     * Always position:fixed to the viewport — never nest under
+     * #topbar backdrop-filter (that creates a containing block and clips on mobile).
+     */
+    .topbar-notifications-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        background-color: rgb(0 0 0 / 0.45);
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+    }
+
+    .topbar-notifications-menu {
+        position: fixed;
+        z-index: 61;
+        left: 0.75rem;
+        right: 0.75rem;
+        top: 4.75rem;
+        width: auto;
+        max-width: none;
+        max-height: min(70vh, 28rem);
+        display: flex;
+        flex-direction: column;
+        background-color: var(--color-w1, #ffffff);
+        border: 1px solid var(--color-border, #e2e5ea);
+        border-radius: 1rem;
+        box-shadow: 0 20px 40px rgb(15 23 42 / 0.18);
+        transition: opacity 0.15s ease, transform 0.15s ease;
+        overflow: hidden;
+    }
+
+    .topbar-notifications-menu [data-notif-list] {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: min(60vh, 20rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    @media (min-width: 768px) {
+        .topbar-notifications-backdrop {
+            display: none !important;
+        }
+
+        .topbar-notifications-menu {
+            /* left/top/width set by JS under the bell */
+            right: auto;
+        }
+    }
+
     .nav-section {
         @apply px-4 pb-1 pt-3.5 text-[10.5px] font-bold uppercase tracking-[0.09em] text-faint select-none whitespace-nowrap first:pt-1;
     }
@@ -627,5 +679,37 @@
     #education-modal,
     #employment-history-modal {
         z-index: 80;
+    }
+
+    /* Global search mega menu panel (Hrivo lacks max-w-4xl) */
+    .search-mega-panel {
+        width: 100%;
+        max-width: 56rem;
+        max-height: min(80vh, 720px);
+    }
+
+    /* Employee deep-link highlight from global search (?highlight=uuid) */
+    @keyframes employee-row-pulse {
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary, #d31219) 35%, transparent);
+        }
+        50% {
+            box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary, #d31219) 28%, transparent);
+        }
+    }
+
+    tr.employee-row-highlight > td {
+        background-color: color-mix(in srgb, var(--color-primary, #d31219) 10%, transparent);
+    }
+
+    tr.employee-row-highlight {
+        animation: employee-row-pulse 1.4s ease-in-out 3;
+    }
+
+    article.employee-row-highlight {
+        border-color: color-mix(in srgb, var(--color-primary, #d31219) 55%, var(--color-border, #e2e5ea));
+        background-color: color-mix(in srgb, var(--color-primary, #d31219) 8%, var(--color-surface, #fff));
+        animation: employee-row-pulse 1.4s ease-in-out 3;
     }
 }

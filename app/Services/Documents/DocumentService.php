@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Repositories\Documents\DocumentRepository;
 use App\Services\Audit\AuditLogger;
 use App\Services\Lookups\LookupService;
+use App\Services\Notifications\NotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
@@ -22,6 +23,7 @@ class DocumentService
         private readonly DocumentRepository $documents,
         private readonly AuditLogger $audit,
         private readonly LookupService $lookups,
+        private readonly NotificationService $notifications,
     ) {}
 
     /**
@@ -337,6 +339,25 @@ class DocumentService
                 expiredCount: $expired,
                 withinDays: $withinDays,
             ));
+
+            $this->notifications->notify(
+                user: $user,
+                type: 'document.expiry_digest',
+                title: 'Document expiry digest',
+                body: sprintf(
+                    '%d document(s) expire within %d days; %d already expired.',
+                    $expiring->count(),
+                    $withinDays,
+                    $expired,
+                ),
+                actionUrl: route('modules.show', ['module' => 'documents']),
+                meta: [
+                    'expiring_count' => $expiring->count(),
+                    'expired_count' => $expired,
+                    'within_days' => $withinDays,
+                ],
+            );
+
             $sent++;
         }
 

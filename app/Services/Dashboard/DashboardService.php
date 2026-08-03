@@ -2,8 +2,10 @@
 
 namespace App\Services\Dashboard;
 
+use App\Models\User;
 use App\Repositories\Dashboard\DashboardRepository;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardService
 {
@@ -14,7 +16,106 @@ class DashboardService
     /**
      * @return array<string, mixed>
      */
-    public function stats(): array
+    public function stats(?User $user = null): array
+    {
+        $user ??= Auth::user();
+        $isHrDashboard = $user?->hasPermission('employees.view') ?? false;
+
+        if (! $isHrDashboard) {
+            return $this->employeeSelfServiceStats($user);
+        }
+
+        return $this->hrCommandCenterStats();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function employeeSelfServiceStats(?User $user): array
+    {
+        return [
+            'mode' => 'employee',
+            'employees' => ['value' => null, 'delta_percent' => null],
+            'on_leave' => ['value' => null, 'delta_percent' => null, 'share_percent' => null],
+            'departments' => ['value' => null, 'delta_percent' => null],
+            'attendance' => [
+                'value' => null,
+                'available' => false,
+                'phase' => 'P5',
+            ],
+            'summary' => [
+                'check_ins' => [
+                    'value' => null,
+                    'available' => false,
+                    'phase' => 'P5',
+                ],
+                'on_leave' => null,
+                'late_arrivals' => [
+                    'value' => null,
+                    'available' => false,
+                    'phase' => 'P5',
+                ],
+            ],
+            'headcount_movement' => [
+                'hires_this_month' => null,
+                'separations_this_month' => null,
+                'net_this_month' => null,
+            ],
+            'charts' => [
+                'attendance_trend' => ['available' => false, 'phase' => 'P5'],
+                'attendance_today' => ['available' => false, 'phase' => 'P5'],
+                'leave_by_month' => ['available' => false, 'phase' => 'P4'],
+                'department_headcount' => ['available' => false],
+                'headcount_trend' => ['available' => false],
+            ],
+            'pending' => [
+                'total_actionable' => 0,
+                'items' => [],
+                'incomplete_profiles' => [
+                    'count' => 0,
+                    'available' => false,
+                    'items' => [],
+                ],
+            ],
+            'on_leave_now' => [
+                'available' => false,
+                'count' => 0,
+                'items' => [],
+            ],
+            'upcoming_leave' => [
+                'available' => false,
+                'phase' => 'P4',
+                'items' => [],
+                'href' => '/modules/leave',
+            ],
+            'payroll' => [
+                'available' => false,
+                'phase' => 'P7',
+            ],
+            'training' => [
+                'available' => false,
+                'phase' => 'P6',
+            ],
+            'performance' => [
+                'available' => false,
+                'phase' => 'P6',
+            ],
+            'activity' => [
+                'items' => [],
+            ],
+            'user' => [
+                'name' => $user?->name,
+                'email' => $user?->email,
+                'roles' => $user?->roleSlugs() ?? [],
+            ],
+            'generated_at' => Carbon::now()->toIso8601String(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function hrCommandCenterStats(): array
     {
         $employees = $this->dashboard->employeesHeadcount();
         $onLeave = $this->dashboard->employeesOnLeave();
@@ -38,6 +139,7 @@ class DashboardService
             ->sum(static fn (array $item): int => (int) $item['count']);
 
         return [
+            'mode' => 'hr',
             'employees' => [
                 'value' => $employees,
                 'delta_percent' => null,

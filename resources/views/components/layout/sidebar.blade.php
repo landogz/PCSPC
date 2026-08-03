@@ -3,6 +3,14 @@
     use App\Services\Administration\SystemParameterService;
 
     $nav = Navigation::sections();
+    $mainNav = array_values(array_filter(
+        $nav,
+        static fn (array $section): bool => ($section['placement'] ?? 'main') !== 'bottom',
+    ));
+    $bottomNav = array_values(array_filter(
+        $nav,
+        static fn (array $section): bool => ($section['placement'] ?? 'main') === 'bottom',
+    ));
     $brand = app(SystemParameterService::class)->current();
     $brandLogoUrl = $brand['logo_url'];
     $brandLogoAlt = $brand['company_name'] !== '' ? $brand['company_name'] : config('app.name');
@@ -43,7 +51,7 @@
 
     <nav class="flex-1 flex flex-col overflow-y-auto p-4">
         <div class="space-y-4">
-            @foreach ($nav as $group)
+            @foreach ($mainNav as $group)
                 <div class="space-y-1">
                     <p class="nav-section">{{ $group['label'] }}</p>
                     @foreach ($group['items'] as $item)
@@ -59,6 +67,25 @@
             @endforeach
         </div>
     </nav>
+
+    @if ($bottomNav !== [])
+        <div class="px-4 pb-2 space-y-4 border-t border-border pt-3">
+            @foreach ($bottomNav as $group)
+                <div class="space-y-1">
+                    <p class="nav-section">{{ $group['label'] }}</p>
+                    @foreach ($group['items'] as $item)
+                        <a
+                            href="{{ Navigation::href($item) }}"
+                            class="mobile-nav-item flex items-center gap-3 px-4 py-3 rounded-xl {{ Navigation::isActive($item) ? 'is-active' : '' }}"
+                        >
+                            <i class="ph {{ $item['icon'] }} text-xl"></i>
+                            <span class="font-medium">{{ $item['label'] }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            @endforeach
+        </div>
+    @endif
 
     <div class="p-4 border-t border-border flex items-center gap-3">
         <div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold flex-shrink-0 overflow-hidden" data-user-avatar>
@@ -100,7 +127,7 @@
 
     <nav class="flex-1 flex flex-col overflow-y-auto py-3 px-3">
         <div class="space-y-4">
-            @foreach ($nav as $group)
+            @foreach ($mainNav as $group)
                 <div class="space-y-1">
                     <p class="nav-section nav-text">{{ $group['label'] }}</p>
                     @foreach ($group['items'] as $item)
@@ -117,6 +144,26 @@
             @endforeach
         </div>
     </nav>
+
+    @if ($bottomNav !== [])
+        <div class="px-3 pb-1 space-y-3 border-t border-border-subtle pt-3">
+            @foreach ($bottomNav as $group)
+                <div class="space-y-1">
+                    <p class="nav-section nav-text">{{ $group['label'] }}</p>
+                    @foreach ($group['items'] as $item)
+                        <a
+                            href="{{ Navigation::href($item) }}"
+                            class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all {{ Navigation::isActive($item) ? 'is-active' : '' }}"
+                            title="{{ $item['label'] }}"
+                        >
+                            <i class="ph {{ $item['icon'] }} text-2xl flex-shrink-0"></i>
+                            <span class="nav-text font-medium whitespace-nowrap">{{ $item['label'] }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            @endforeach
+        </div>
+    @endif
 
     <div class="px-3 py-3 border-t border-border-subtle">
         <div class="flex items-center gap-3 rounded-xl p-2 hover:bg-white/5 transition-colors cursor-pointer">

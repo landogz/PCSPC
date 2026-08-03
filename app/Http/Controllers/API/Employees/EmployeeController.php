@@ -101,9 +101,14 @@ class EmployeeController extends Controller
         $payload = collect($request->validated())->except(['photo'])->all();
         $result = $this->employees->create($payload, $request->file('photo'));
 
-        return ApiResponse::success('Employee created and login provisioned.', [
+        $message = $result['welcome_email_sent']
+            ? 'Employee created. Login credentials were emailed to the employee.'
+            : 'Employee created and login provisioned.';
+
+        return ApiResponse::success($message, [
             'employee' => (new EmployeeResource($result['employee'], true))->resolve(),
             'temporary_password' => $result['temporary_password'],
+            'welcome_email_sent' => $result['welcome_email_sent'],
         ], 201);
     }
 

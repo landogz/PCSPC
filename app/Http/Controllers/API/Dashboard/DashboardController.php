@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\Dashboard\DashboardService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -19,8 +20,11 @@ class DashboardController extends Controller
     /**
      * Return summary statistics for the authenticated user's dashboard.
      */
-    public function stats(): JsonResponse
+    public function stats(Request $request): JsonResponse
     {
-        return ApiResponse::success('Dashboard stats retrieved.', $this->dashboard->stats());
+        return ApiResponse::success(
+            'Dashboard stats retrieved.',
+            $this->dashboard->stats($request->user()),
+        );
     }
 }

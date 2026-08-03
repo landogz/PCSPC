@@ -32,7 +32,9 @@ class ApiDocsPageTest extends TestCase
             ->assertSee('Python', false)
             ->assertSee('Java', false)
             ->assertSee('data-module="api-docs"', false)
-            ->assertSee('data-api-docs-code-panel', false);
+            ->assertSee('data-api-docs-code-panel', false)
+            ->assertSee('data-api-docs-group-nav', false)
+            ->assertSee('Modules', false);
     }
 
     public function test_guest_can_fetch_api_docs_json_catalog_with_per_endpoint_examples(): void
@@ -56,6 +58,8 @@ class ApiDocsPageTest extends TestCase
         $this->assertContains('auth', $groupKeys);
         $this->assertContains('employees', $groupKeys);
         $this->assertContains('schedules', $groupKeys);
+        $this->assertContains('notifications', $groupKeys);
+        $this->assertContains('search', $groupKeys);
         $this->assertNotEmpty($response->json('data.featured_examples'));
 
         $firstEndpoint = collect($response->json('data.groups'))
