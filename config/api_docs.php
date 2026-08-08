@@ -75,8 +75,23 @@ return [
         ],
         'employees' => [
             'label' => 'Employees',
-            'description' => 'Employee 201 master file, nested dependents, education, employment history, career history.',
+            'description' => 'Employee 201 master file, nested dependents, education, employment history, career history, leave balances.',
             'order' => 120,
+        ],
+        'leave' => [
+            'label' => 'Leave',
+            'description' => 'Leave types, balances/ledger, filing, Approver→HR workflow, VL accrual (P4a–P4c).',
+            'order' => 125,
+        ],
+        'overtime' => [
+            'label' => 'Overtime',
+            'description' => 'OT / OT Meal filings with multi-level Approver → HR workflow (P4c).',
+            'order' => 126,
+        ],
+        'workflow' => [
+            'label' => 'Workflow',
+            'description' => 'Configurable multi-level approval definitions and inbox (P4c).',
+            'order' => 127,
         ],
         'notifications' => [
             'label' => 'Notifications',
@@ -143,6 +158,81 @@ return [
         ],
         'GET api/v1/documents/stats' => [
             'summary' => 'Document storage meter and category/expiry counts.',
+        ],
+        'GET api/v1/leave/types' => [
+            'summary' => 'List leave types (VL/SL/special stubs). Pass all=1 to include inactive.',
+        ],
+        'POST api/v1/leave/types' => [
+            'summary' => 'Create a leave type (leave.manage).',
+        ],
+        'PUT api/v1/leave/types/{leaveType}' => [
+            'summary' => 'Update a leave type (leave.manage).',
+        ],
+        'DELETE api/v1/leave/types/{leaveType}' => [
+            'summary' => 'Delete unused leave type; types with balances/requests must be deactivated instead.',
+        ],
+        'GET api/v1/leave/balances' => [
+            'summary' => 'HR paginated leave balances (search, leave_year, leave_type).',
+        ],
+        'POST api/v1/leave/balances/adjust' => [
+            'summary' => 'HR manual balance adjustment with reason; writes audited ledger entry.',
+        ],
+        'POST api/v1/leave/accruals/run' => [
+            'summary' => 'Run monthly VL accrual for YYYY-MM (idempotent per employee/period).',
+        ],
+        'GET api/v1/leave/requests/mine' => [
+            'summary' => 'Current employee leave requests (file permission).',
+        ],
+        'GET api/v1/leave/requests' => [
+            'summary' => 'Approver queue of leave requests (defaults to pending).',
+        ],
+        'POST api/v1/leave/requests' => [
+            'summary' => 'File a leave request (mandatory reason; checks balance + overlap).',
+        ],
+        'POST api/v1/leave/requests/{leaveRequest}/approve' => [
+            'summary' => 'Approve current leave workflow step; final step deducts USED and writes ledger use entry.',
+        ],
+        'POST api/v1/leave/requests/{leaveRequest}/reject' => [
+            'summary' => 'Reject at current workflow step with optional notes (no balance change).',
+        ],
+        'POST api/v1/leave/requests/{leaveRequest}/cancel' => [
+            'summary' => 'Cancel a pending leave request (owner or leave.manage); cancels workflow instance.',
+        ],
+        'GET api/v1/employees/{employee}/leave-balances' => [
+            'summary' => 'Leave balances for one employee (UUID).',
+        ],
+        'GET api/v1/overtime/requests/mine' => [
+            'summary' => 'Current employee OT / OT Meal requests (ot.file).',
+        ],
+        'GET api/v1/overtime/requests' => [
+            'summary' => 'Approver queue of overtime requests (defaults to pending).',
+        ],
+        'POST api/v1/overtime/requests' => [
+            'summary' => 'File OT or OT Meal; starts Approver → HR workflow instance.',
+        ],
+        'POST api/v1/overtime/requests/{overtimeRequest}/approve' => [
+            'summary' => 'Approve current workflow step; final step marks OT approved.',
+        ],
+        'POST api/v1/overtime/requests/{overtimeRequest}/reject' => [
+            'summary' => 'Reject at current step (no further approvals).',
+        ],
+        'POST api/v1/overtime/requests/{overtimeRequest}/cancel' => [
+            'summary' => 'Cancel pending OT (owner or ot.manage); cancels workflow instance.',
+        ],
+        'GET api/v1/workflow/definitions' => [
+            'summary' => 'List active workflow definitions and steps.',
+        ],
+        'GET api/v1/workflow/inbox' => [
+            'summary' => 'Pending instances where the user matches the current step permission.',
+        ],
+        'GET api/v1/workflow/instances' => [
+            'summary' => 'Paginated workflow instances (filter by status / definition).',
+        ],
+        'POST api/v1/workflow/instances/{instance}/approve' => [
+            'summary' => 'Approve current step (syncs OT subject status when applicable).',
+        ],
+        'POST api/v1/workflow/instances/{instance}/reject' => [
+            'summary' => 'Reject instance (syncs OT subject status when applicable).',
         ],
     ],
 

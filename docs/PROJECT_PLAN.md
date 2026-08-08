@@ -28,7 +28,8 @@ Interactive views:
 | **P1** Discovery & Design | ⬜ | Workshops / SDD / ERD not started |
 | **P2** Platform Foundation | ✅ / 🔶 | **Done:** SPA shell, Sanctum auth, MFA, RBAC, Users & Security, Roles, Audit Log + domain AuditLogger, **ADM-005 password policy**, **self-service Edit profile + Change password**, **employee-vs-HR dashboard**, **Dashboard HR command center**, **global search**, **Notifications**, **public API docs**, **local PostgreSQL** (`DB_CONNECTION=pgsql`). **Open:** full CI/CD, three envs on GCP; live attendance/leave widgets pending those modules |
 | **P3** Employee 201 + Admin | ✅ | **Done:** Employees 201 (incl. **career history** — position/category/salary), Departments, Holidays (**ADM-008**), Shifts + **Schedules (ADM-009)**, System parameters (**ADM-010**), **Lookups (ADM-006)** + employment category, Documents (**DOC-001**), Training/Medical stubs. Timekeeping consumption of schedules remains P5. |
-| **P4–P10** | ⬜ | Not started |
+| **P4** Leave / OT / Workflow | 🔶 | **P4a–P4c + leave→WF:** Leave/OT on multi-level engine; VL balances. **Open:** Annex A freeze, working-day math, mobile |
+| **P5–P10** | ⬜ | Not started |
 
 ---
 
@@ -41,7 +42,7 @@ flowchart TB
     P0["P0 Procurement<br/>Bid due Aug 20<br/>🔶"] --> P1["P1 Discovery<br/>& Design<br/>⬜"]
     P1 --> P2["P2 Platform<br/>Foundation<br/>✅ / 🔶"]
     P2 --> P3["P3 Employee 201<br/>+ Admin<br/>✅"]
-    P3 --> P4["P4 Leave / OT<br/>/ Workflow<br/>⬜"]
+    P3 --> P4["P4 Leave / OT<br/>/ Workflow<br/>🔶"]
   end
   subgraph R2[" "]
     direction LR
@@ -57,8 +58,8 @@ flowchart TB
   classDef partial fill:#fff5cc,stroke:#c9a000,color:#0e1218
   classDef todo fill:#eef0f3,stroke:#94a0b0,color:#404a60
   class P2,P3 done
-  class P0 partial
-  class P1,P4,P5,P6,P7,P8,P9,P10 todo
+  class P0,P4 partial
+  class P1,P5,P6,P7,P8,P9,P10 todo
 ```
 
 ### CI/CD promotion flowchart
@@ -133,7 +134,7 @@ Design, develop, customize, implement, and support an integrated **Human Resourc
 | **P1** | Kickoff, Discovery & Design | W1–W4 | 4 weeks | PM + BA + Architect | ⬜ |
 | **P2** | Platform Foundation | W5–W7 | 3 weeks | Backend + DevOps | ✅ / 🔶 |
 | **P3** | Employee 201 + Admin/Security | W8–W11 | 4 weeks | Full-stack | 🔶 |
-| **P4** | Leave, OT & Workflow Engine | W12–W16 | 5 weeks | Full-stack | ⬜ |
+| **P4** | Leave, OT & Workflow Engine | W12–W16 | 5 weeks | Full-stack | 🔶 |
 | **P5** | Timekeeping + Biometric | W17–W21 | 5 weeks | Full-stack + Integrator | ⬜ |
 | **P6** | Medical, Training, Performance, Comp/Benefits | W22–W26 | 5 weeks | Full-stack | ⬜ |
 | **P7** | Loans, Deductions, Earnings, Travel, Reports | W27–W30 | 4 weeks | Full-stack | ⬜ |
@@ -163,7 +164,7 @@ Design, develop, customize, implement, and support an integrated **Human Resourc
 
 - ⬜ Business process workshops (HR / IT / department heads)
 - ⬜ Freeze Annex A approval matrices (Leave, OT & OT Meal) by department and rank
-- ⬜ Document leave credit rules (VL tenure tiers, SL caps, special leaves, carry-over/cash)
+- 🔶 Document leave credit rules — provisional VL tenure tiers in [`docs/LEAVE_AND_OT_POLICY.md`](LEAVE_AND_OT_POLICY.md) (SL caps / carry-over still open)
 - ⬜ Holiday calendar rules (double pay, rest-day holiday = 8 hrs)
 - ⬜ Attendance computation rules from PCSPC
 - ⬜ Biometric device inventory & API/SDK access
@@ -236,17 +237,42 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 
 ---
 
-### P4 — Leave, Overtime & Workflow Engine (W12–W16) ⬜
+### P4 — Leave, Overtime & Workflow Engine (W12–W16) 🔶
 
-- ⬜ Configurable multi-level approvals (WF-001) per Annex A matrices
-- ⬜ Leave filing with **mandatory reason**; special leave includes HR
-- ⬜ VL / SL / Emergency / Bereavement / Maternity / Paternity / Solo Parent / VAWC / etc.
-- ⬜ OT + OT Meal filings
-- ⬜ Leave/OT email + additional domain notification types beyond welcome/doc-expiry; **mobile app** self-service for Leave/OT
-- ⬜ HR ability to add/delete departments and customize special leave credits  
-  *(Departments CRUD already exists under P3 — leave-credit customization still open)*
+**P4a — Leave credits & balances (local ✅)**
+- ✅ Leave types seeded (VL accruing, SL active, special-leave inactive stubs) + **HR CRUD** (`leave.manage`)
+- ✅ `leave_balances` + append-only `leave_ledger_entries` (UUID)
+- ✅ Monthly VL accrual by tenure (1.25 / 1.50 / 1.66); no ACC until regularized; idempotent per year-month
+- ✅ HR adjust API + AuditLogger (`leave.balance.adjusted`, `leave.accrual.run`)
+- ✅ `/modules/leave` Balances + Types UI (Axios, DataTable, Swal confirm / toast results)
+- ✅ APIs: `GET /leave/types`, `GET /leave/balances`, `POST /leave/balances/adjust`, `POST /leave/accruals/run`, `GET /employees/{employee}/leave-balances`
+- ✅ Policy reference: [`docs/LEAVE_AND_OT_POLICY.md`](LEAVE_AND_OT_POLICY.md)
 
-**Exit:** End-to-end leave/OT paths accepted on Staging.
+**P4b — Leave filing + simple approvals (local ✅)**
+- ✅ `leave_requests` (pending / approved / rejected / cancelled)
+- ✅ Employee file with mandatory reason; overlap + balance checks
+- ✅ Approver queue; multi-step Approver → HR (balance USE on final approve); reject/cancel no deduction
+- ✅ HR-only workflow for `requires_hr` types (`leave_hr`)
+- ✅ Dual-channel notify (email + in-app) on submit / step / approve / reject / cancel
+- ✅ UI tabs: My requests, Approvals (+ Balances / Types) with current workflow step
+- ✅ APIs: `GET|POST /leave/requests*`, approve / reject / cancel
+
+**Still open (P4 residual)**
+- ⬜ Freeze Annex A department/rank matrices (replace provisional Approver→HR seed)
+- ⬜ Working-day / holiday leave day math
+- ⬜ Mobile app self-service for Leave/OT
+- ⬜ HR UI to customize special leave credits
+
+**P4c — OT filings + reusable workflow engine (local ✅)**
+- ✅ `workflow_definitions` / `workflow_steps` / `workflow_instances` / `workflow_actions`
+- ✅ Seeded `overtime` definition: Approver (`ot.approve`) → HR (`ot.manage`)
+- ✅ `overtime_requests` (ot / ot_meal) with dual-channel notify
+- ✅ Permissions `ot.file` / `ot.approve` / `ot.manage`; modules `/modules/overtime`, `/modules/workflow`
+- ✅ APIs: `/api/v1/overtime/*`, `/api/v1/workflow/*`
+- ✅ **Leave → workflow adapter:** `leave` (Approver→HR) + `leave_hr` (HR-only for `requires_hr`); balance USE on final approve only
+
+**Exit (P4a–P4c local):** HR/employees can file leave & OT; both use multi-step workflow; VL balances work.  
+**Exit (contract):** End-to-end leave/OT paths accepted on Staging.
 
 ---
 
@@ -326,10 +352,10 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 
 | User Access & Security | SEC-001…002 | P2–P3 | ✅ |
 | Employee Management | EMP-001…006 | P3 | 🔶 201 v1 + photo + Excel + dependents + education + employment history + **career history** (position/category/salary) + training/medical stubs; nested training/medical CRUD in P6 |
-| Leave Management | LEV-001…002 | P4 | ⬜ scaffold only |
-| Overtime Management | OT-001 | P4 | ⬜ scaffold only |
+| Leave Management | LEV-001…002 | P4 | 🔶 P4a–P4c filing + Approver→HR workflow; day-math later |
+| Overtime Management | OT-001 | P4 | ✅ P4c OT/OT Meal + Approver→HR |
+| Workflow Engine | WF-001 | P4 | ✅ Leave + OT on shared engine; Annex A matrices later |
 | Timekeeping + Biometric | TM-001…002 | P5 | ⬜ scaffold only |
-| Workflow Engine | WF-001 | P4 | ⬜ scaffold only |
 | Document Management | DOC-001 | P3 | ✅ Drive-style repo: expiry tabs, folders, preview, bulk, versions, digest |
 | Notifications | NOT-001 | P3–P4 | ✅ in-app + email (welcome, doc expiry); topbar bell + `/modules/notifications` |
 | Reporting & Analytics | RPT-001 | P7 | ⬜ scaffold only |
@@ -421,6 +447,6 @@ Total Contract Price: **VAT Zero-Rated** (Form of Proposal). Proposal validity: 
 1. Attend / prepare for **Pre-bid Aug 4, 2026** — clarify biometric brands, attendance formulas, mobile scope, GCP readiness, PostgreSQL hosting, data migration volumes.  
 2. Draft Technical Compliance Matrix vs Annex A Must Haves.  
 3. Prepare Gantt (this plan as baseline) + team CVs.  
-4. ✅ Continue local Laravel scaffold — **P2 core + P3 Employees/Departments/Security done**; **local PostgreSQL migrated**; next: P4 leave / GCP envs.  
+4. ✅ Continue local Laravel scaffold — **P2–P4c done** (leave + OT workflow); **local PostgreSQL**; next: Annex A freeze / P5 / GCP envs.  
 5. Do **not** start production feature build until contract award (except proposal assets / demos).  
-6. **Next build slice (post-award / continued demo):** start **P4 Leave scaffold APIs** (types, credits, filing + workflow hooks).
+6. **Next build slice:** Working-day / holiday leave day math, or provisional Annex A matrix UI.

@@ -15,9 +15,9 @@ Aligned to:
 | People | Employees | `/modules/employees` | P3 | EMP-001…006 | modules → Employee 201 |
 | People | Departments | `/modules/departments` | P3 | ADM-001…002 | modules → Employee 201 / org |
 | Time & Attendance | Timekeeping | `/modules/timekeeping` | P5 | TM-001…002 | modules → Timekeeping |
-| Time & Attendance | Leave Management | `/modules/leave` | P4 | LEV-001…002 | leave approval flow |
-| Time & Attendance | Overtime | `/modules/overtime` | P4 | OT-001 | leave/OT approval flow |
-| Time & Attendance | Workflow Approvals | `/modules/workflow` | P4 | WF-001 | Approver 1 → 2 → HR |
+| Time & Attendance | Leave Management | `/modules/leave` | P4 🔶 | LEV-001…002 | Approver→HR workflow; working-day math later |
+| Time & Attendance | Overtime | `/modules/overtime` | P4 ✅ | OT-001 | OT/OT Meal + Approver→HR |
+| Time & Attendance | Workflow Approvals | `/modules/workflow` | P4 ✅ | WF-001 | Shared Leave + OT inbox |
 | HR Records | Medical Records | `/modules/medical` | P3 stub / P6 | EMP-006 · MED-001 | modules → Medical / Training / Perf |
 | HR Records | Training | `/modules/training` | P3 stub / P6 | EMP-005 · TRN-001 | modules → Medical / Training / Perf |
 | HR Records | Performance | `/modules/performance` | P6 | PRF-001 | modules → Medical / Training / Perf |

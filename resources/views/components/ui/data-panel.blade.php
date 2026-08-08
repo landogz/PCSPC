@@ -103,9 +103,15 @@
     <div class="p-4 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" data-table-meta>
         <p class="text-xs text-muted" data-meta-label>Showing 0 records</p>
         <div class="flex items-center gap-2">
-            <button type="button" data-page="prev" class="h-9 min-h-[44px] sm:min-h-9 px-3 rounded-lg border border-border text-sm disabled:opacity-40" disabled>Prev</button>
+            <button type="button" data-page="prev" class="inline-flex items-center justify-center gap-1.5 h-9 min-h-[44px] sm:min-h-9 px-3 rounded-lg border border-border text-sm disabled:opacity-40" disabled aria-label="Previous page">
+                <i class="ph ph-caret-left text-base" aria-hidden="true"></i>
+                <span>Prev</span>
+            </button>
             <span class="text-xs text-muted" data-page-label>Page 1</span>
-            <button type="button" data-page="next" class="h-9 min-h-[44px] sm:min-h-9 px-3 rounded-lg border border-border text-sm disabled:opacity-40" disabled>Next</button>
+            <button type="button" data-page="next" class="inline-flex items-center justify-center gap-1.5 h-9 min-h-[44px] sm:min-h-9 px-3 rounded-lg border border-border text-sm disabled:opacity-40" disabled aria-label="Next page">
+                <span>Next</span>
+                <i class="ph ph-caret-right text-base" aria-hidden="true"></i>
+            </button>
         </div>
     </div>
 

@@ -19,7 +19,20 @@ const ACTION_ICONS = {
     unlock: 'ph-lock-key-open',
     create: 'ph-plus',
     download: 'ph-download-simple',
+    approve: 'ph-check-circle',
+    reject: 'ph-x-circle',
+    cancel: 'ph-prohibit',
+    adjust: 'ph-sliders-horizontal',
+    read: 'ph-checks',
 };
+
+/**
+ * @param {string} key
+ * @param {string} [override]
+ */
+export function actionIconClass(key, override) {
+    return override || ACTION_ICONS[key] || 'ph-dots-three';
+}
 
 /**
  * @param {Array<{ key: string, label: string, danger?: boolean, icon?: string }>} actions
@@ -31,7 +44,7 @@ export function rowActionsCell(actions = []) {
 
     const buttons = actions
         .map((action) => {
-            const icon = action.icon || ACTION_ICONS[action.key] || 'ph-dots-three';
+            const icon = actionIconClass(action.key, action.icon);
             const tone = action.danger
                 ? 'text-danger border-danger/30 hover:bg-danger/10'
                 : 'text-heading border-border hover:bg-subtle';
@@ -71,7 +84,7 @@ export function cardActions(actions = []) {
     return `
         <div class="flex flex-wrap items-center gap-1.5 pt-3 border-t border-border">
             ${actions.map((action) => {
-                const icon = action.icon || ACTION_ICONS[action.key] || 'ph-dots-three';
+                const icon = actionIconClass(action.key, action.icon);
                 const tone = action.danger
                     ? 'text-danger border-danger/30 hover:bg-danger/10'
                     : 'text-heading border-border hover:bg-subtle';
@@ -158,16 +171,18 @@ export function createServerTable({
         }
 
         menu.innerHTML = actions
-            .map(
-                (action) => `
+            .map((action) => {
+                const icon = actionIconClass(action.key, action.icon);
+                return `
             <button
                 type="button"
-                class="w-full text-left px-3 py-2.5 text-sm hover:bg-subtle transition-colors ${action.danger ? 'text-danger' : 'text-heading'}"
+                class="w-full inline-flex items-center gap-2 text-left px-3 py-2.5 text-sm hover:bg-subtle transition-colors ${action.danger ? 'text-danger' : 'text-heading'}"
                 data-menu-action="${action.key}"
             >
-                ${action.label}
-            </button>`,
-            )
+                <i class="ph ${icon} text-base" aria-hidden="true"></i>
+                <span>${escapeHtml(action.label)}</span>
+            </button>`;
+            })
             .join('');
 
         menu.classList.remove('hidden');

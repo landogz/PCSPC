@@ -113,6 +113,16 @@ class Employee extends Model
             ->orderByDesc('created_at');
     }
 
+    public function leaveBalances(): HasMany
+    {
+        return $this->hasMany(LeaveBalance::class);
+    }
+
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class)->orderByDesc('start_date');
+    }
+
     public function fullName(): string
     {
         $parts = array_filter([

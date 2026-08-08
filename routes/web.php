@@ -12,6 +12,12 @@ use App\Http\Controllers\API\Lookups\LookupController;
 use App\Http\Controllers\API\Notifications\NotificationController;
 use App\Http\Controllers\API\Search\SearchController;
 use App\Http\Controllers\API\Holidays\HolidayController;
+use App\Http\Controllers\API\Leave\LeaveAccrualController;
+use App\Http\Controllers\API\Leave\LeaveBalanceController;
+use App\Http\Controllers\API\Leave\LeaveRequestController;
+use App\Http\Controllers\API\Leave\LeaveTypeController;
+use App\Http\Controllers\API\Overtime\OvertimeRequestController;
+use App\Http\Controllers\API\Workflow\WorkflowController;
 use App\Http\Controllers\API\Schedules\ScheduleController;
 use App\Http\Controllers\API\Shifts\ShiftController;
 use App\Http\Controllers\API\Employees\EmployeeController;
@@ -222,6 +228,7 @@ Route::prefix('api/v1')->middleware(['auth:sanctum', 'password.current'])->group
             Route::get('/{employee}/educations', [EmployeeEducationController::class, 'index']);
             Route::get('/{employee}/employment-history', [EmployeeEmploymentHistoryController::class, 'index']);
             Route::get('/{employee}/career-history', [EmployeeCareerHistoryController::class, 'index']);
+            Route::get('/{employee}/leave-balances', [LeaveBalanceController::class, 'forEmployee']);
             Route::get('/{employee}', [EmployeeController::class, 'show']);
         });
 
@@ -243,5 +250,67 @@ Route::prefix('api/v1')->middleware(['auth:sanctum', 'password.current'])->group
             Route::match(['put', 'post'], '/{employee}', [EmployeeController::class, 'update']);
             Route::delete('/{employee}', [EmployeeController::class, 'destroy']);
         });
+    });
+
+    Route::prefix('leave')->group(function (): void {
+        Route::middleware('permission:leave.file,leave.approve,leave.manage')->group(function (): void {
+            Route::get('/types', [LeaveTypeController::class, 'index']);
+        });
+
+        Route::middleware('permission:leave.file')->group(function (): void {
+            Route::get('/requests/mine', [LeaveRequestController::class, 'mine']);
+            Route::post('/requests', [LeaveRequestController::class, 'store'])
+                ->middleware('throttle:30,1');
+        });
+
+        Route::middleware('permission:leave.file,leave.manage')->group(function (): void {
+            Route::post('/requests/{leaveRequest}/cancel', [LeaveRequestController::class, 'cancel']);
+        });
+
+        Route::middleware('permission:leave.approve,leave.manage')->group(function (): void {
+            Route::get('/balances', [LeaveBalanceController::class, 'index']);
+            Route::get('/requests', [LeaveRequestController::class, 'index']);
+            Route::get('/requests/{leaveRequest}', [LeaveRequestController::class, 'show']);
+            Route::post('/requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve']);
+            Route::post('/requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject']);
+        });
+
+        Route::middleware('permission:leave.manage')->group(function (): void {
+            Route::post('/types', [LeaveTypeController::class, 'store']);
+            Route::get('/types/{leaveType}', [LeaveTypeController::class, 'show']);
+            Route::put('/types/{leaveType}', [LeaveTypeController::class, 'update']);
+            Route::delete('/types/{leaveType}', [LeaveTypeController::class, 'destroy']);
+            Route::post('/balances/adjust', [LeaveBalanceController::class, 'adjust']);
+            Route::post('/accruals/run', [LeaveAccrualController::class, 'run'])
+                ->middleware('throttle:20,1');
+        });
+    });
+
+    Route::prefix('overtime')->group(function (): void {
+        Route::middleware('permission:ot.file')->group(function (): void {
+            Route::get('/requests/mine', [OvertimeRequestController::class, 'mine']);
+            Route::post('/requests', [OvertimeRequestController::class, 'store'])
+                ->middleware('throttle:30,1');
+        });
+
+        Route::middleware('permission:ot.file,ot.manage')->group(function (): void {
+            Route::post('/requests/{overtimeRequest}/cancel', [OvertimeRequestController::class, 'cancel']);
+        });
+
+        Route::middleware('permission:ot.approve,ot.manage')->group(function (): void {
+            Route::get('/requests', [OvertimeRequestController::class, 'index']);
+            Route::get('/requests/{overtimeRequest}', [OvertimeRequestController::class, 'show']);
+            Route::post('/requests/{overtimeRequest}/approve', [OvertimeRequestController::class, 'approve']);
+            Route::post('/requests/{overtimeRequest}/reject', [OvertimeRequestController::class, 'reject']);
+        });
+    });
+
+    Route::prefix('workflow')->middleware('permission:ot.approve,ot.manage,leave.approve,leave.manage')->group(function (): void {
+        Route::get('/definitions', [WorkflowController::class, 'definitions']);
+        Route::get('/inbox', [WorkflowController::class, 'inbox']);
+        Route::get('/instances', [WorkflowController::class, 'instances']);
+        Route::get('/instances/{instance}', [WorkflowController::class, 'show']);
+        Route::post('/instances/{instance}/approve', [WorkflowController::class, 'approve']);
+        Route::post('/instances/{instance}/reject', [WorkflowController::class, 'reject']);
     });
 });

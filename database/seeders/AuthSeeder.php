@@ -29,6 +29,10 @@ class AuthSeeder extends Seeder
             ['name' => 'Manage Documents', 'slug' => 'documents.manage', 'module' => 'documents'],
             ['name' => 'File Leave', 'slug' => 'leave.file', 'module' => 'leave'],
             ['name' => 'Approve Leave', 'slug' => 'leave.approve', 'module' => 'leave'],
+            ['name' => 'Manage Leave Credits', 'slug' => 'leave.manage', 'module' => 'leave'],
+            ['name' => 'File Overtime', 'slug' => 'ot.file', 'module' => 'overtime'],
+            ['name' => 'Approve Overtime', 'slug' => 'ot.approve', 'module' => 'overtime'],
+            ['name' => 'Manage Overtime', 'slug' => 'ot.manage', 'module' => 'overtime'],
             ['name' => 'View Timekeeping', 'slug' => 'timekeeping.view', 'module' => 'timekeeping'],
         ];
 
@@ -59,6 +63,10 @@ class AuthSeeder extends Seeder
                 'documents.manage',
                 'leave.file',
                 'leave.approve',
+                'leave.manage',
+                'ot.file',
+                'ot.approve',
+                'ot.manage',
                 'timekeeping.view',
             ])->pluck('id')
         );
@@ -66,6 +74,7 @@ class AuthSeeder extends Seeder
             Permission::query()->whereIn('slug', [
                 'dashboard.view',
                 'leave.file',
+                'ot.file',
                 'timekeeping.view',
             ])->pluck('id')
         );
@@ -128,6 +137,7 @@ class AuthSeeder extends Seeder
             'position_title' => 'HR Administrator',
             'employment_status' => 'active',
             'date_hired' => '2024-01-15',
+            'date_regularized' => '2024-07-15',
             'tin' => '123-456-789-000',
             'sss_number' => '34-1234567-8',
             'philhealth_number' => '12-345678901-2',
@@ -141,6 +151,7 @@ class AuthSeeder extends Seeder
             'position_title' => 'Staff',
             'employment_status' => 'active',
             'date_hired' => '2024-06-01',
+            'date_regularized' => '2024-12-01',
             'tin' => '987-654-321-000',
             'sss_number' => '34-7654321-0',
             'philhealth_number' => '12-987654321-0',
@@ -155,6 +166,7 @@ class AuthSeeder extends Seeder
             'position_title' => 'Super Admin',
             'employment_status' => 'active',
             'date_hired' => '2023-11-01',
+            'date_regularized' => '2024-05-01',
         ]);
 
         $this->seedDemoNotifications($demoEmployee, $admin);

@@ -13,6 +13,8 @@ class DatabaseSeeder extends Seeder
             Lookups\LookupSeeder::class,
             Holidays\PhilippineHolidaySeeder::class,
             Shifts\PhilippineShiftSeeder::class,
+            Leave\LeaveTypeSeeder::class,
+            Workflow\WorkflowDefinitionSeeder::class,
         ]);
     }
 }

@@ -61,6 +61,8 @@ Health check: `GET /api/v1/health`
 | API catalog JSON | `/api-docs.json` | Throttled machine-readable catalog |
 | Global search | Topbar / `⌘K` | Modules + people; deep-links employees with `?highlight=` |
 | Notifications | `/modules/notifications` + topbar bell | In-app inbox; dual-channel with email where wired |
+| Leave (P4a–P4c) | `/modules/leave` | Filing + Approver→HR (or HR-only); balances; policy in `docs/LEAVE_AND_OT_POLICY.md` |
+| Overtime / Workflow (P4c) | `/modules/overtime`, `/modules/workflow` | OT/OT Meal + shared Leave/OT approval inbox |
 | Project plan | `/docs/project-plan` | Live phase checklist (`docs/PROJECT_PLAN.md`) |
 
 ## Project documents
