@@ -5,28 +5,32 @@ Laravel 13 API-based SPA foundation for the PCSPC Human Resource Information Sys
 ## Stack
 
 - Laravel 13 + PHP 8.3+
-- MySQL (`pcspc`)
+- **PostgreSQL** (`pcspc`) — target DB per SOW; local Homebrew or GCP
 - Laravel Sanctum (SPA session + bearer token for mobile)
 - Tailwind CSS 4 + Vite
 - Axios, SweetAlert2 (confirmations only), toast for success/error
 - DataTables-style listings with actions + context menus
 
-## Local setup (XAMPP / Artisan)
+## Local setup
 
-1. Start MySQL in XAMPP (database `pcspc`).
-2. Prefer PHP 8.3+ CLI (Laravel 13):
+1. Start PostgreSQL (Homebrew: `brew services start postgresql@18`).
+2. Create the database if needed: `createdb pcspc`
+3. Prefer PHP 8.3+ CLI with `pdo_pgsql`:
 
 ```bash
 cd /Applications/XAMPP/xamppfiles/htdocs/PCSPC
 composer install && npm install
 cp .env.example .env   # if needed
 php artisan key:generate
+# .env: DB_CONNECTION=pgsql, DB_PORT=5432, DB_DATABASE=pcspc, DB_USERNAME=<your OS user or postgres>
 php artisan migrate --seed
 npm run build
 php artisan serve --host=127.0.0.1 --port=8002
 ```
 
 Open `http://127.0.0.1:8002/login` (or the port you chose).
+
+PHPUnit uses in-memory SQLite (`phpunit.xml`) and does not require Postgres.
 
 ### Demo accounts (from AuthSeeder)
 

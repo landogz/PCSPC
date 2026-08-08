@@ -198,6 +198,7 @@ class AuthSeeder extends Seeder
             }
 
             UserNotification::query()->create([
+                'uuid' => (string) Str::uuid(),
                 'user_id' => $sample['user']->id,
                 'type' => $sample['type'],
                 'title' => $sample['title'],

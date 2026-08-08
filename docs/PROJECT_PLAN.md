@@ -4,7 +4,7 @@
 **Client:** Philippine Coastal Storage & Pipeline Corporation (PCSPC)  
 **Sources:** `docs/hris-bidding/` (Invitation to Bid, TOR, Scope of Work, Annex A, Form of Proposal)  
 **Proposed delivery:** ~36 weeks to Go-Live + **6 months warranty** (duration subject to PCSPC approval)  
-**Plan last updated:** 2026-08-04
+**Plan last updated:** 2026-08-08
 
 Interactive views:
 - Plan: [`/docs/project-plan`](/docs/project-plan) ← phases P0–P10
@@ -24,9 +24,9 @@ Interactive views:
 
 | Phase | Status | What’s done |
 |-------|--------|-------------|
-| **P0** Procurement | 🔶 | Bid materials in `docs/hris-bidding/`; pre-bid still upcoming |
+| **P0** Procurement | 🔶 | Bid materials in `docs/hris-bidding/`; pre-bid **2026-08-04**; **submission due 2026-08-20** |
 | **P1** Discovery & Design | ⬜ | Workshops / SDD / ERD not started |
-| **P2** Platform Foundation | ✅ / 🔶 | **Done:** SPA shell, Sanctum auth, MFA, RBAC, Users & Security, Roles, Audit Log + domain AuditLogger, **ADM-005 password policy**, **self-service Edit profile + Change password**, **employee-vs-HR dashboard** (self-service hides org KPIs; Help/API Docs menu admin-only), **Dashboard HR command center**, **global search mega menu** (⌘K / topbar), **Notifications** (topbar + module), **public API docs**, ApiResponse, FormRequests, nav RBAC, toasts, feature tests. **Open:** PostgreSQL switch, full CI/CD, three envs on GCP; live attendance/leave widgets pending those modules |
+| **P2** Platform Foundation | ✅ / 🔶 | **Done:** SPA shell, Sanctum auth, MFA, RBAC, Users & Security, Roles, Audit Log + domain AuditLogger, **ADM-005 password policy**, **self-service Edit profile + Change password**, **employee-vs-HR dashboard**, **Dashboard HR command center**, **global search**, **Notifications**, **public API docs**, **local PostgreSQL** (`DB_CONNECTION=pgsql`). **Open:** full CI/CD, three envs on GCP; live attendance/leave widgets pending those modules |
 | **P3** Employee 201 + Admin | ✅ | **Done:** Employees 201 (incl. **career history** — position/category/salary), Departments, Holidays (**ADM-008**), Shifts + **Schedules (ADM-009)**, System parameters (**ADM-010**), **Lookups (ADM-006)** + employment category, Documents (**DOC-001**), Training/Medical stubs. Timekeeping consumption of schedules remains P5. |
 | **P4–P10** | ⬜ | Not started |
 
@@ -38,7 +38,7 @@ Interactive views:
 flowchart TB
   subgraph R1[" "]
     direction LR
-    P0["P0 Procurement<br/>Pre-bid → Award<br/>🔶"] --> P1["P1 Discovery<br/>& Design<br/>⬜"]
+    P0["P0 Procurement<br/>Bid due Aug 20<br/>🔶"] --> P1["P1 Discovery<br/>& Design<br/>⬜"]
     P1 --> P2["P2 Platform<br/>Foundation<br/>✅ / 🔶"]
     P2 --> P3["P3 Employee 201<br/>+ Admin<br/>✅"]
     P3 --> P4["P4 Leave / OT<br/>/ Workflow<br/>⬜"]
@@ -149,7 +149,7 @@ Design, develop, customize, implement, and support an integrated **Human Resourc
 
 **Key dates**
 - Pre-bid: **August 4, 2026 (Tue) 10:00 AM**, Bldg. 1428 POL Pier Compound, Subic Bay Freeport Zone
-- Bid deadline: tentatively **~1–2 weeks after pre-bid** (confirm at meeting)
+- Bid / proposal submission: **August 20, 2026**
 
 **Submit**
 - Envelope 1 — Technical (company profile, team/CVs, Gantt, methodology, compliance matrix, architecture & migration approach, testing/training/warranty plan, similar projects, SEC/business docs, signatory authority)
@@ -183,7 +183,7 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 - ✅ Self-service profile (`GET|PUT /api/v1/auth/profile`, avatar upload/remove) + Change password modal from topbar user menu; audited (`profile.*`)
 - ✅ `ApiResponse` standard, FormRequest validation, permission middleware
 - ✅ Audit logs (auth events + shared `AuditLogger` for Security / Employees / Departments mutations → `/modules/audit`); ✅ **Notifications** (in-app inbox + topbar bell + `/api/v1/notifications`; dual-channel with welcome email + document expiry digest); ✅ **employee welcome/login email** (credentials on create)
-- ⬜ **PostgreSQL** schema baseline (still MySQL on local XAMPP)
+- ✅ **PostgreSQL** schema baseline (local Homebrew `pcspc`; still open: GCP dedicated DB)
 - ⬜ Official PCSPC GitHub/repo branching (`feature` → staging → main)
 - 🔶 CI pipeline skeleton (feature tests exist; full SAST/CD not wired)
 - ⬜ Three environments wired: Dev → Staging → Live (no direct-to-Live)
@@ -348,7 +348,7 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 
 | Topic | Requirement | Status |
 |-------|-------------|--------|
-| Database | **PostgreSQL** on dedicated DB server (SOW B.5) | ⬜ local still MySQL |
+| Database | **PostgreSQL** on dedicated DB server (SOW B.5) | ✅ local `pgsql`; ⬜ GCP dedicated |
 | Environments | Dev → Staging(UAT) → Live only | ⬜ |
 | Cloud | PCSPC provides GCP (or chosen) IaC; contractor sizes & configures app | ⬜ |
 | Repo | PCSPC-owned; daily/milestone pushes; PR reviews; no direct push to main | ⬜ |
@@ -357,7 +357,7 @@ Aligned to enterprise Laravel API SPA standards + SOW Part B:
 | API | REST APIs for integrations + mobile | 🔶 underway |
 | IP | All project source code owned by PCSPC; readable, non-obfuscated | ✅ process intent |
 
-**Local note:** Current XAMPP scaffold uses MySQL for convenience. Switch to PostgreSQL before Staging.
+**Local note:** App uses **PostgreSQL** (`DB_CONNECTION=pgsql`). MySQL/XAMPP is no longer the default. Point Staging/Live at a dedicated Postgres instance.
 
 ---
 
@@ -421,6 +421,6 @@ Total Contract Price: **VAT Zero-Rated** (Form of Proposal). Proposal validity: 
 1. Attend / prepare for **Pre-bid Aug 4, 2026** — clarify biometric brands, attendance formulas, mobile scope, GCP readiness, PostgreSQL hosting, data migration volumes.  
 2. Draft Technical Compliance Matrix vs Annex A Must Haves.  
 3. Prepare Gantt (this plan as baseline) + team CVs.  
-4. ✅ Continue local Laravel scaffold — **P2 core + P3 Employees/Departments/Security done**; plan PostgreSQL migration path next.  
+4. ✅ Continue local Laravel scaffold — **P2 core + P3 Employees/Departments/Security done**; **local PostgreSQL migrated**; next: P4 leave / GCP envs.  
 5. Do **not** start production feature build until contract award (except proposal assets / demos).  
 6. **Next build slice (post-award / continued demo):** start **P4 Leave scaffold APIs** (types, credits, filing + workflow hooks).

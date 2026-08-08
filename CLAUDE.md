@@ -27,7 +27,7 @@ For every task:
 |---|---|
 | Backend Framework | Laravel (latest LTS-compatible) |
 | Language | PHP 8+ (typed properties, enums, match, readonly where applicable) |
-| Database | MySQL / MariaDB |
+| Database | PostgreSQL (local Homebrew / GCP dedicated DB; SOW B.5) |
 | Frontend markup | HTML5 (semantic) |
 | Styling | CSS3 + Tailwind CSS (utility-first, no inline styles unless dynamic) |
 | Scripting | JavaScript / TypeScript |
